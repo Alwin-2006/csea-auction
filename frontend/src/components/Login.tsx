@@ -152,6 +152,7 @@ function Login() {
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
             onError={() => setError('Google sign-in failed')}
+            ux_mode="popup"
           />
           <div className="text-sm text-center">
             Don't have an account?{' '}
