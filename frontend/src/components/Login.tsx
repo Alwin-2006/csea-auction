@@ -1,0 +1,172 @@
+import { useEffect, useState } from 'react'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import { Button } from "./ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@radix-ui/react-label"
+import { GoogleLogin } from '@react-oauth/google'
+import { useNavigate } from "react-router-dom"
+import { useUserStore } from "../store.ts";
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com'
+
+function Login() {
+  const nav = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const setUser = useUserStore((state) => state.setUser);
+  const user = useUserStore((state) => state.user);
+
+  const handleTraditionalLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      console.log("Server response:", data);
+
+      if (!response.ok) {
+        setError(data.error || "Login failed");
+        return;
+      }
+
+      // Save token
+      localStorage.setItem("token", data.token);
+      console.log("Token saved");
+
+      // Update Zustand store
+      setUser(data.user);
+      console.log("User store after setUser:", useUserStore.getState().user);
+      if (localStorage.getItem("token")) nav("/");
+      // Navigate after store update
+       // only navigate here, not via any parent effect
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+    
+  }
+
+  const handleGoogleSuccess = async (response: any) => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const res = await fetch(`${API_URL}/auth/google-signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token: response.credential })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Google sign-in failed')
+        return
+      }
+
+      // Save token and user info to localStorage
+      localStorage.setItem('token', data.token)
+      setUser(data.user);
+      nav('/')
+      
+    } catch (err) {
+      setError('Network error. Please try again.')
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  useEffect(() => {
+    if (user) {
+      nav("/"); // only redirect if user exists
+    }
+  }, [user]);
+  return (
+    <div className="w-full flex my-20 justify-center items-center">
+      <Card className="w-full max-w-sm bg-gray-300">
+        <CardHeader>
+          <CardTitle>Login to your account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleTraditionalLogin}>
+            <div className="flex flex-col gap-6">
+              {error && <div className="text-red-500 text-sm">{error}</div>}
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Password</Label>
+                  <a
+                    href="#"
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <div className="mt-6">
+              <Button
+                type="submit"
+                className="w-full bg-amber-500 cursor-pointer"
+                disabled={loading}
+              >
+                {loading ? 'Loading...' : 'Login'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+        <CardFooter className="flex-col gap-4">
+          <div className="w-full text-center text-sm text-gray-600 mb-2">
+            Or continue with
+          </div>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google sign-in failed')}
+          />
+          <div className="text-sm text-center">
+            Don't have an account?{' '}
+            <Button
+              variant="link"
+              onClick={() => nav('/sign-up')}
+              className="p-0"
+            >
+              Sign Up
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
+  )
+}
+
+export default Login
