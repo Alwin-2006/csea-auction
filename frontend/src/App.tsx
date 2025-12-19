@@ -153,7 +153,7 @@ function App() {
   React.useEffect(() => {
     const fetchBids = async () => {
       try {
-        const res = await axios.get("https://csea-auction-site.onrender.com//api/bid/bids"); 
+        const res = await axios.get("https://csea-auction-site.onrender.com/api/bid/bids"); 
         setBids(res.data.auctions); 
       } catch (err) {
         console.error("Error fetching auctions:", err);
