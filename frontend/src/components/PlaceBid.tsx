@@ -111,7 +111,7 @@ const AuctionPage: React.FC = () => {
     //for setting the timer
     
     useEffect(() => {
-        if (!auction || !auction.endingDate) return;
+        if (!auction || !auction.endingDate || auction.mode !== 'dutch') return;
 
         const endDate = new Date(auction.endingDate).getTime(); 
         const startDate = new Date(auction.startingDate).getTime(); 
