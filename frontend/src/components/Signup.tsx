@@ -3,7 +3,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@radix-ui/react-label"
-import { GoogleLogin } from '@react-oauth/google'
 import { useNavigate } from "react-router-dom"
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com/'
@@ -46,39 +45,6 @@ function Signup() {
 
       if (!response.ok) {
         setError(data.error || 'Signup failed')
-        return
-      }
-
-      // Save token and user info to localStorage
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data.user))
-
-      nav('/')
-    } catch (err) {
-      setError('Network error. Please try again.')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleGoogleSuccess = async (response: any) => {
-    setLoading(true)
-    setError('')
-
-    try {
-      const res = await fetch(`${API_URL}/api/auth/google-signin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ token: response.credential })
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Google sign-up failed')
         return
       }
 
@@ -163,10 +129,11 @@ function Signup() {
           <div className="w-full text-center text-sm text-gray-600 mb-2">
             Or sign up with
           </div>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError('Google sign-up failed')}
-          />
+          <a href={`${API_URL}/api/auth/google`} className="w-full">
+            <Button variant="outline" className="w-full">
+              Sign up with Google
+            </Button>
+          </a>
           <div className="text-sm text-center">
             Already have an account?{' '}
             <Button

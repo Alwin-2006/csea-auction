@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
@@ -7,10 +7,9 @@ import Layout from './components/Layout.tsx'
 import MyBids from './components/MyBids.tsx'
 import Login from './components/Login.tsx'
 import Signup from './components/Signup.tsx'
-import { GoogleOAuthProvider } from '@react-oauth/google'
 import CreateBid from './components/CreateBid.tsx'
 import PlaceBid from './components/PlaceBid.tsx'
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+import AuthCallback from './components/AuthCallback.tsx'
 
 // Protected route component
 function ProtectedRoute({ children }) {
@@ -47,13 +46,15 @@ const router = createBrowserRouter([
         element:<CreateBid />
       }
     ]
+  },
+  {
+    path: "/auth/callback",
+    element: <AuthCallback />
   }
 ])
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={CLIENT_ID}>
-      <RouterProvider router={router} />
-    </GoogleOAuthProvider>
+    <RouterProvider router={router} />
   </StrictMode>,
 )

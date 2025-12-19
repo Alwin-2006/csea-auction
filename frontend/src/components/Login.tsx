@@ -3,7 +3,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Button } from "./ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@radix-ui/react-label"
-import { GoogleLogin } from '@react-oauth/google'
 import { useNavigate } from "react-router-dom"
 import { useUserStore } from "../store.ts";
 
@@ -57,43 +56,12 @@ function Login() {
     
   }
 
-  const handleGoogleSuccess = async (response: any) => {
-    setLoading(true)
-    setError('')
-
-    try {
-      const res = await fetch(`${API_URL}/api/auth/google-signin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ token: response.credential })
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Google sign-in failed')
-        return
-      }
-
-      // Save token and user info to localStorage
-      localStorage.setItem('token', data.token)
-      setUser(data.user);
-      nav('/')
-      
-    } catch (err) {
-      setError('Network error. Please try again.')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
   useEffect(() => {
     if (user) {
       nav("/"); // only redirect if user exists
     }
   }, [user]);
+  
   return (
     <div className="w-full flex my-20 justify-center items-center">
       <Card className="w-full max-w-sm bg-gray-300">
@@ -149,11 +117,11 @@ function Login() {
           <div className="w-full text-center text-sm text-gray-600 mb-2">
             Or continue with
           </div>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setError('Google sign-in failed')}
-            ux_mode="popup"
-          />
+          <a href={`${API_URL}/api/auth/google`} className="w-full">
+            <Button variant="outline" className="w-full">
+              Sign in with Google
+            </Button>
+          </a>
           <div className="text-sm text-center">
             Don't have an account?{' '}
             <Button

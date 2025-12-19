@@ -3,69 +3,86 @@ import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import bcryptjs from 'bcryptjs';
 import { OAuth2Client } from 'google-auth-library';
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 
+dotenv.config();
 
 const router = express.Router();
 
+// This client is for the server-side flow and requires the client secret.
+// The redirect URI MUST be added to your Google Cloud Console authorized URIs.
+const oAuth2Client = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  `${process.env.BACKEND_URL || 'https://csea-auction-site.onrender.com'}/api/auth/google/callback`
+);
 
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const client = new OAuth2Client(CLIENT_ID);
-dotenv.config();
-// Google OAuth verification
-router.post('/google-signin', async (req, res) => {
-  try {
-    const { token } = req.body;
-
-    if (!token) {
-      return res.status(400).json({ error: 'Token is required' });
-    }
-    
-    // Verify the token
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: CLIENT_ID
-    });
-
-    const payload = ticket.getPayload();
-    const { sub, email, name, picture } = payload;
-
-    // Check if user exists
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      // Create new user
-      user = new User({
-        username: name,
-        email,
-        googleId: sub,
-        profilePicture: picture,
-        password: '' // Google OAuth users don't need a password
-      });
-      await user.save();
-    }
-
-    // Generate JWT token
-    const jwtToken = jwt.sign(
-      { userId: user._id, email: user.email },
-        process.env.JWT_SECRET,
-      
-    );
-    res.json({
-      success: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        profilePicture: user.profilePicture
-      },
-      token: jwtToken
-    });
-  } catch (error) {
-    console.error('Google OAuth error:', error);
-    res.status(500).json({ error: 'Authentication failed' });
-  }
+// Route to initiate the Google OAuth redirect flow
+router.get('/google', (req, res) => {
+  const authorizeUrl = oAuth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'openid'
+    ],
+    prompt: 'consent' // Force consent screen every time
+  });
+  res.redirect(authorizeUrl);
 });
+
+// Route to handle the callback from Google
+router.get('/google/callback', async (req, res) => {
+    try {
+        const { code } = req.query;
+        if (!code) {
+            return res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+        }
+
+        // Exchange the authorization code for tokens
+        const { tokens } = await oAuth2Client.getToken(code);
+        oAuth2Client.setCredentials(tokens);
+
+        // Get user profile information
+        const ticket = await oAuth2Client.verifyIdToken({
+            idToken: tokens.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { sub, email, name, picture } = payload;
+
+        // Find or create user in the database
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = new User({
+                username: name,
+                email,
+                googleId: sub,
+                profilePicture: picture,
+                password: '' // No password for OAuth users
+            });
+            await user.save();
+        }
+
+        // Generate our own JWT to manage the session
+        const userPayload = {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            profilePicture: user.profilePicture
+        };
+        const jwtToken = jwt.sign(userPayload, process.env.JWT_SECRET);
+        
+        // Redirect to a specific frontend route that can handle the token
+        res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${jwtToken}`);
+
+    } catch (error) {
+        console.error('Google callback error:', error);
+        res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+    }
+});
+
 
 // Traditional signup
 router.post('/signup', async (req, res) => {
@@ -91,19 +108,19 @@ router.post('/signup', async (req, res) => {
 
     await user.save();
 
+    const userPayload = {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        profilePicture: user.profilePicture
+    };
+
     // Generate JWT token
-    const token = jwt.encode(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET
-    );
+    const token = jwt.sign(userPayload, process.env.JWT_SECRET);
 
     res.json({
       success: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email
-      },
+      user: userPayload,
       token
     });
   } catch (error) {
@@ -132,19 +149,19 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
+    const userPayload = {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        profilePicture: user.profilePicture
+    };
+
     // Generate JWT token
-    const token = jwt.encode(
-      { userId: user._id, email: user.email },
-      process.env.JWT_SECRET
-    );
+    const token = jwt.sign(userPayload, process.env.JWT_SECRET);
 
     res.json({
       success: true,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email
-      },
+      user: userPayload,
       token
     });
   } catch (error) {
