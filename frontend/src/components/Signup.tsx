@@ -67,7 +67,7 @@ function Signup() {
     setError('')
 
     try {
-      const res = await fetch(`${API_URL}/auth/google-signin`, {
+      const res = await fetch(`${API_URL}/api/auth/google-signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
