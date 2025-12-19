@@ -182,7 +182,7 @@ function CreateBid() {
         
         try {
             const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com/api';
-            const response = await fetch(`${API_URL}/api/bid/create-bid`, {
+            const response = await fetch(`${API_URL}/bid/create-bid`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -192,8 +192,16 @@ function CreateBid() {
             });
             
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to create bid');
+                let errorMessage = `Failed to create auction. Status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorMessage;
+                } catch (e) {
+                    // The error response was not JSON.
+                    const textResponse = await response.text();
+                    errorMessage = textResponse || errorMessage;
+                }
+                throw new Error(errorMessage);
             }
 
             // Handle success
