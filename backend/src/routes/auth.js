@@ -24,7 +24,6 @@ router.get('/google', (req, res) => {
     scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/gmail.send',
         'openid'
     ],
     prompt: 'consent' // Force consent screen every time
