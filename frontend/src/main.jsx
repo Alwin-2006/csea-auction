@@ -10,7 +10,7 @@ import Signup from './components/Signup.tsx'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import CreateBid from './components/CreateBid.tsx'
 import PlaceBid from './components/PlaceBid.tsx'
-const CLIENT_ID = "612482519410-of5t8dbk5captfu7vfutgve3gb8cegsv.apps.googleusercontent.com"
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
 // Protected route component
 function ProtectedRoute({ children }) {
