@@ -86,7 +86,7 @@ const AuctionPage: React.FC = () => {
             setError(null);
 
             try {
-                const response = await axios.get(`${API_URL}/bid/bids/${id}`, { 
+                const response = await axios.get(`${API_URL}/api/bid/bids/${id}`, { 
                     headers: {
                         Authorization: `Bearer ${token}`,
                     }

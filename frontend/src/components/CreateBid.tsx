@@ -182,7 +182,7 @@ function CreateBid() {
         
         try {
             const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com/api';
-            const response = await fetch(`${API_URL}/bid/create-bid`, {
+            const response = await fetch(`${API_URL}/api/bid/create-bid`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
