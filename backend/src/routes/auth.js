@@ -24,6 +24,7 @@ router.get('/google', (req, res) => {
     scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/gmail.send',
         'openid'
     ],
     prompt: 'consent' // Force consent screen every time
@@ -62,8 +63,15 @@ router.get('/google/callback', async (req, res) => {
                 profilePicture: picture,
                 password: '' // No password for OAuth users
             });
-            await user.save();
         }
+
+        // If a refresh token is provided, save it to the user.
+        // This usually only happens the very first time the user grants consent.
+        if (tokens.refresh_token) {
+            user.refreshToken = tokens.refresh_token;
+        }
+
+        await user.save();
 
         // Generate our own JWT to manage the session
         const userPayload = {

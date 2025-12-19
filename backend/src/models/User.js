@@ -23,6 +23,9 @@ const userSchema = new mongoose.Schema({
   profilePicture:{
     type:String,
   },
+  refreshToken: {
+    type: String,
+  },
   createdAt: { 
     type: Date, 
     default: Date.now 
