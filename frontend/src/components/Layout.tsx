@@ -30,9 +30,9 @@ const Layout = () => {
                     console.error("Error fetching auctions:", err);
                 }
             }
-            fetch();
+            if(user)fetch();
            
-        },[]);
+        },[user]);
         useEffect(()=>{
             joinMultiple(bids.map((bid)=>bid._id),user?.username);
         },[bids,user])
