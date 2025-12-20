@@ -7,9 +7,7 @@
   font-family: 'Oswald', sans-serif;
 }
 
-body {
-  background: radial-gradient(circle at center, #FFD580 0%, #FFA500 70%, #FF8C00 100%);
-}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

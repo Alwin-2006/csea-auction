@@ -39,7 +39,7 @@ const Navbar = () => {
         nav('/login');
     }
     return  (
-        <nav className="w-full border-b bg-white text-gray-500">
+        <nav className="w-full bg-white text-gray-500">
           <div className="container mx-auto flex h-16 items-center justify-between px-4">
             
             {/* Logo */}

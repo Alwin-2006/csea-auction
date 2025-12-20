@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
@@ -16,64 +17,10 @@ import axios from 'axios'
 import { min } from 'date-fns'
 import { useUserStore } from "./store.ts";
 import { useRealtimeStore } from './socketstore.tsx'
+import Autoplay from "embla-carousel-autoplay"
 
 
-const auctionItems = [
-  {
-    id: 1,
-    title: 'Diamond Necklace',
-    description: '18K white gold with 25ct diamonds',
-    currentBid: 85000,
-    bids: 23,
-    endTime: '4h 32m',
-    image: 'https://images.unsplash.com/photo-1481980235850-66e47651e431?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwamV3ZWxyeXxlbnwxfHx8fDE3NjQ4MjQ3MDZ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-  },
-  {
-    id: 2,
-    title: 'Victorian Writing Desk',
-    description: 'Mahogany desk circa 1880',
-    currentBid: 12500,
-    bids: 15,
-    endTime: '1d 2h',
-    image: 'https://images.unsplash.com/photo-1544691560-fc2053d97726?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbnRpcXVlJTIwZnVybml0dXJlfGVufDF8fHx8MTc2NDg0NDMxNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-  },
-  {
-    id: 3,
-    title: 'First Edition Book Set',
-    description: 'Complete works of Shakespeare, 1623',
-    currentBid: 450000,
-    bids: 42,
-    endTime: '6h 15m',
-    image: 'https://images.unsplash.com/photo-1757360133602-afff0a359d10?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyYXJlJTIwYm9vayUyMGNvbGxlY3Rpb258ZW58MXx8fHwxNzY0ODc1NzY0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-  },
-  {
-    id: 4,
-    title: 'Hermès Birkin Bag',
-    description: 'Crocodile leather, limited edition',
-    currentBid: 95000,
-    bids: 31,
-    endTime: '12h 45m',
-    image: 'https://images.unsplash.com/photo-1591348278863-a8fb3887e2aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBoYW5kYmFnfGVufDF8fHx8MTc2NDgxNTA0M3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-  },
-  {
-    id: 5,
-    title: '1945 Château Margaux',
-    description: 'Rare vintage wine, pristine condition',
-    currentBid: 28000,
-    bids: 18,
-    endTime: '2d 1h',
-    image: 'https://images.unsplash.com/photo-1758580815179-a35963ca52b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaW5lJTIwd2luZSUyMGJvdHRsZXN8ZW58MXx8fHwxNzY0ODc1NzY0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-  },
-  {
-    id: 6,
-    title: 'Rolex Daytona',
-    description: 'Paul Newman edition, 1969',
-    currentBid: 175000,
-    bids: 37,
-    endTime: '8h 20m',
-    image: 'https://images.unsplash.com/photo-1680810897186-372717262131?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB3YXRjaCUyMGF1Y3Rpb258ZW58MXx8fHwxNzY0ODc1NzYyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-  },
-]; 
+
 export interface AuctionItem {
   _id: number;
   title: string;
@@ -143,11 +90,16 @@ function ItemCard({item}:ItemCardProps){
         </Link>
     )
 }
-const url = import.meta.env.VITE_API_URL;
+
 
 function App() {
   const [bids,setBids]= useState<AuctionItem[]>([]);
-  const user = useUserStore((state)=>state.user)
+  const user = useUserStore((state)=>state.user);
+  const trending = ["https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1765871321366-c2b86bd243b0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDN8Ym84alFLVGFFMFl8fGVufDB8fHx8fA%3D%3D",
+    "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+
+  ]
   // ...
 
   React.useEffect(() => {
@@ -166,24 +118,29 @@ function App() {
   console.log(bids);
   return (
     <>
-    <div className='flex flex-col justify-between items-center text-sm md:text-lg bg-white'>
-          <div className='flex h-70 w-full md:w-full md:h-150 justify-center items-center bg-blue-900'>
-              <Carousel className="w-1/2 flex flex-col h-full md:w-3/4">
-              <CarouselContent className=''>
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <CarouselItem key={index} className='h-full'>
-                    <div className="">
+    <div className='flex flex-col justify-between items-center text-sm md:text-lg bg-white h-full'>
+          <div className='flex  justify-center items-center '>
+              <Carousel className=" flex flex-col p-0 " plugins={[
+        Autoplay({
+          delay: 5000,
+        }),
+      ]}>
+              <CarouselContent className='aspect-video ' >
+                {trending.map((ele, index) => (
+                  <CarouselItem key={index} className=''>
+                    <div className="  ">
                       <Card className=''>
                         <CardContent className="">
-                          <span className="font-semibold"><img src = "https://cdn.pixabay.com/photo/2025/11/24/11/00/burano-9973925_1280.jpg" className='object-contain w-full '/>{index + 1}</span>
+                          <span className="font-semibold "><img src = {ele} className='object-contain w-full '/></span>
                         </CardContent>
                       </Card>
-                    </div>
+                    </div>  
                   </CarouselItem>
                 ))}
+               
               </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
+              <CarouselPrevious className=" bg-black text-white absolute left-10 top-1/2 -translate-y-1/2 z-10" />
+              <CarouselNext className=" bg-black text-white absolute right-10 top-1/2 -translate-y-1/2 z-10" />
             </Carousel>
           </div>
 
