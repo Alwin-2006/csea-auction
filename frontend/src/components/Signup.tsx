@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@radix-ui/react-label"
 import { useNavigate } from "react-router-dom"
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com/'
+const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com'
 
 function Signup() {
   const nav = useNavigate()
