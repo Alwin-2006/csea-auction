@@ -28,7 +28,7 @@ interface Auction {
     _id: string;
     title: string;
     description?: string;
-    seller: user;
+    seller: User;
     mode?: string;
     currentBid: number;
     startingDate?: number;
@@ -43,6 +43,7 @@ interface Auction {
         bidder: string,
         amount: number,
     }[];
+    highestBidderProfilePic?: string; // Added this line
 }
 
 
@@ -79,54 +80,69 @@ const AuctionPage: React.FC = () => {
     const [timeRemaining, setTimeRemaining] = useState('Loading...'); 
     const addBid = useBidStore((s)=>s.addBid);
     const token = localStorage.getItem('token'); 
-    const [profile,setProfile] = useState("");
-    const [highestBidder,setHighestBidder] = useState("");
-    const [seller, setSeller] = useState<user | null>(null);
-    useEffect(() => {
-        if (!id) {
-            setLoading(false);
-            setError("Auction ID not found in URL.");
-            return;
-        }
-
-        const existingAuction = bids.find((bid) => bid._id === id);
-        if (existingAuction) {
-            setAuction(existingAuction);
-            if (typeof existingAuction.seller === 'object') {
-                setSeller(existingAuction.seller);
+        const [highestBidderName, setHighestBidderName] = useState("");
+        const [highestBidderProfilePic, setHighestBidderProfilePic] = useState("");
+        const [seller, setSeller] = useState<User | null>(null);
+    
+        useEffect(() => {
+            if (!id) {
+                setLoading(false);
+                setError("Auction ID not found in URL.");
+                return;
             }
-            setLoading(false);
-        } else {
-            const fetchAuction = async () => {
-                setLoading(true);
-                setError(null);
-
-                try {
-                    const response = await axios.get(`${API_URL}/api/bid/bids/${id}`, { 
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        }
-                    });
-                    setAuction(response.data.auction);
-                    if (typeof response.data.auction.seller === 'object') {
-                        setSeller(response.data.auction.seller);
-                    }
-                    addBid(response.data.auction);
-                    setHighestBidder(response.data.highestBidder);
-                    setProfile(response.data.profilePic);
-                } catch (err) {
-                    setError("Failed to fetch auction details.");
-                    console.error("Fetch error:", err);
-                } finally {
-                    setLoading(false);
+    
+            const existingAuction = bids.find((bid) => bid._id === id);
+            if (existingAuction) {
+                setAuction(existingAuction);
+                if (typeof existingAuction.seller === 'object') {
+                    setSeller(existingAuction.seller);
                 }
-            };
+                if (existingAuction.highestBidder) {
+                    setHighestBidderName(existingAuction.highestBidder);
+                    setHighestBidderProfilePic(existingAuction.highestBidderProfilePic || ""); 
+                }
+                setLoading(false);
+            } else {
+                const fetchAuction = async () => {
+                    setLoading(true);
+                    setError(null);
+
+                    try {
+                        const response = await axios.get(`${API_URL}/api/bid/bids/${id}`, {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            }
+                        });
+                        setAuction(response.data.auction);
+                        if (typeof response.data.auction.seller === 'object') {
+                            setSeller(response.data.auction.seller);
+                        }
+                        if (response.data.auction.highestBidder) {
+                            setHighestBidderName(response.data.auction.highestBidder);
+                            setHighestBidderProfilePic(response.data.auction.highestBidderProfilePic || ""); 
+                        }
+                        addBid(response.data.auction);
+                    } catch (err) {
+                        setError("Failed to fetch auction details.");
+                        console.error("Fetch error:", err);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                
+                fetchAuction();
+            }
             
-            fetchAuction();
-        }
+        }, [id, token, bids]); 
         
-    }, [id, token, bids]); 
-    //for setting the timer
+        useEffect(() => {
+            if (auction) {
+                if (auction.highestBidder) {
+                    setHighestBidderName(auction.highestBidder);
+                    setHighestBidderProfilePic(auction.highestBidderProfilePic || ""); 
+                }
+            }
+        }, [auction]);    //for setting the timer
     
     useEffect(() => {
         if (!auction) return;
@@ -189,8 +205,8 @@ const AuctionPage: React.FC = () => {
             bidderName:user!.username,
             bidderId:String(user?.id)
         })
-        setProfile(user?.profilePicture);
-        setHighestBidder(user?.username);
+        setHighestBidderProfilePic(user?.profilePicture || "");
+        setHighestBidderName(user?.username || "");
     }
     
     if (loading) {
@@ -208,7 +224,7 @@ const AuctionPage: React.FC = () => {
     let auctionData = auction;
     
     return (
-        <div className="min-h-screen p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-[#F8F9FB] p-4 md:p-8 font-sans">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
             
@@ -250,13 +266,13 @@ const AuctionPage: React.FC = () => {
                             icon={
                                 <div className='bg-white'>
                                     <Avatar className='h-5 w-5 rounded-full '>
-                                        <AvatarImage src={profile}   referrerPolicy="no-referrer" className="rounded-full object-fit"/>
-                                        <AvatarFallback>{highestBidder[0]}</AvatarFallback>
+                                        <AvatarImage src={highestBidderProfilePic}   referrerPolicy="no-referrer" className="rounded-full object-fit"/>
+                                        <AvatarFallback>{highestBidderName[0]}</AvatarFallback>
                                     </Avatar>
                                 </div>
                             } 
                             title="Highest Bidder" 
-                            mainValue={highestBidder} 
+                            mainValue={highestBidderName} 
                             subValue={timeRemaining === 'EXPIRED' ? "Auction has ended" : ""}
                             iconColor="text-blue-500"
                         />:

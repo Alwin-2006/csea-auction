@@ -74,7 +74,7 @@ export function MyBids() {
   const myAuctions = bids.filter(ele=> ele.seller._id === String(user?.id));
   console.log("bids is",bids);
 
-  const salutations = ["Hello","Sup"];
+  const salutations = ["Hello","Welcome"];
 
   return (
     <div className="bg-white rounded-4xl p-10">

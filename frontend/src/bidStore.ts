@@ -27,6 +27,7 @@ type User = {
         bidder: string,
         amount: number,
     }[];
+    highestBidderProfilePic?: string; // Added this line
 };
 
 type BidStore = {
