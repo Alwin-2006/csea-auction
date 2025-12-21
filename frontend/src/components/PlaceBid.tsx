@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-    Flame,
-    Users,
-    TrendingUp,
     Clock,
     Gavel,
     AlertCircle,
@@ -11,324 +8,145 @@ import {
 } from 'lucide-react';
 import { useUserStore } from "../store.ts";
 import axios from 'axios';
-
 import { useRealtimeStore } from '@/socketstore.tsx';
 import { useBidStore } from '@/bidStore.ts';
-import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com'
-
+// Update interface to match the populated backend data
 interface User {
+    _id: string;
     username: string;
-    profilePicture: string;
+    profilePicture?: string;
+    email?: string;
 }
 
 interface Auction {
     _id: string;
     title: string;
-    description?: string;
+    description: string;
     seller: User;
-    mode?: string;
+    mode: string;
     currentBid: number;
-    startingDate?: number;
-    startingBid?: number;
-    endingDate?: number;
+    startingDate: number;
+    startingBid: number;
+    endingDate: number;
     image?: string;
-    status?: 'active' | 'closed';
-    highestBidder?: string;
-    bidderId?: string;
-    createdAt?: number;
-    bidHistory?: {
-        bidder: string,
-        amount: number,
-    }[];
-    highestBidderProfilePic?: string; // Added this line
 }
 
-
-interface ImageBadgeProps { icon: React.ReactNode; text: string; }
-interface InfoCardProps { icon: React.ReactNode; title: string; mainValue: string; subValue?: string; iconColor?: string; isCurrency?: boolean; }
-
-const ImageBadge: React.FC<ImageBadgeProps> = ({ icon, text }) => (
-    <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-sm font-medium">
-        {icon}
-        <span>{text}</span>
-    </div>
-);
-
-const InfoCard: React.FC<InfoCardProps> = ({ icon, title, mainValue, subValue = "", iconColor = "text-gray-500", isCurrency = false }) => (
-    <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4">
-        <div className={`p-3 rounded-xl bg-gray-50 ${iconColor}`}>{icon}</div>
-        <div>
-            <p className="text-sm text-gray-500 font-medium mb-1">{title}</p>
-            <h3 className={`text-xl font-bold ${isCurrency ? 'text-orange-500' : 'text-gray-900'}`}>{mainValue}</h3>
-            <p className="text-sm text-gray-400 mt-1">{subValue}</p>
-        </div>
-    </div>
-);
-
 const AuctionPage: React.FC = () => {
+    const { id } = useParams<{ id: string }>();
     const placeBid = useRealtimeStore((s) => s.placeBid);
-    const bids = useBidStore((s)=>s.bids);
-    const { id } = useParams<{ id: string }>(); 
-    const user = useUserStore((s)=>s.user);
+    const bids = useBidStore((s) => s.bids);
+    const addBid = useBidStore((s) => s.addBid);
+    const user = useUserStore((s) => s.user);
+
     const [auction, setAuction] = useState<Auction | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [amount,setAmount] = useState("");
-    const [timeRemaining, setTimeRemaining] = useState('Loading...'); 
-    const addBid = useBidStore((s)=>s.addBid);
-    const token = localStorage.getItem('token'); 
-        const [highestBidderName, setHighestBidderName] = useState("");
-        const [highestBidderProfilePic, setHighestBidderProfilePic] = useState("");
-        const [seller, setSeller] = useState<User | null>(null);
-    
-        useEffect(() => {
-            if (!id) {
+    const [amount, setAmount] = useState("");
+    const [timeRemaining, setTimeRemaining] = useState('Loading...');
+
+    // These must be STRINGS to prevent the Object Rendering Error
+    const [highestBidderName, setHighestBidderName] = useState<string>("No bids yet");
+    const [highestBidderPic, setHighestBidderPic] = useState<string>("");
+
+    const token = localStorage.getItem('token');
+
+    useEffect(() => {
+        const fetchAuction = async () => {
+            if (!id) return;
+            try {
+                const response = await axios.get(`${API_URL}/api/bid/bids/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                setAuction(response.data.auction);
+                
+                // IMPORTANT: Ensure we extract the string from the object
+                const hb = response.data.highestBidder;
+                setHighestBidderName(typeof hb === 'object' ? hb.username : (hb || "No bids yet"));
+                setHighestBidderPic(response.data.profilePic || "");
+
+                if (response.data.auction.mode === 'standard') {
+                    setAmount(String(response.data.auction.currentBid));
+                }
+            } catch (err) {
+                setError("Failed to fetch auction details.");
+            } finally {
                 setLoading(false);
-                setError("Auction ID not found in URL.");
+            }
+        };
+        fetchAuction();
+    }, [id, token]);
+
+    // Timer Logic
+    useEffect(() => {
+        if (!auction || !auction.endingDate) return;
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const end = new Date(auction.endingDate).getTime();
+            const diff = end - now;
+
+            if (diff <= 0) {
+                setTimeRemaining("EXPIRED");
+                clearInterval(interval);
                 return;
             }
-    
-            const existingAuction = bids.find((bid) => bid._id === id);
-            if (existingAuction) {
-                setAuction(existingAuction);
-                if (typeof existingAuction.seller === 'object') {
-                    setSeller(existingAuction.seller);
-                }
-                if (existingAuction.highestBidder) {
-                    setHighestBidderName(existingAuction.highestBidder);
-                    setHighestBidderProfilePic(existingAuction.highestBidderProfilePic || ""); 
-                }
-                setLoading(false);
-            } else {
-                const fetchAuction = async () => {
-                    setLoading(true);
-                    setError(null);
 
-                    try {
-                        const response = await axios.get(`${API_URL}/api/bid/bids/${id}`, {
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            }
-                        });
-                        setAuction(response.data.auction);
-                        if (typeof response.data.auction.seller === 'object') {
-                            setSeller(response.data.auction.seller);
-                        }
-                        if (response.data.auction.highestBidder) {
-                            setHighestBidderName(response.data.auction.highestBidder);
-                            setHighestBidderProfilePic(response.data.auction.highestBidderProfilePic || ""); 
-                        }
-                        addBid(response.data.auction);
-                    } catch (err) {
-                        setError("Failed to fetch auction details.");
-                        console.error("Fetch error:", err);
-                    } finally {
-                        setLoading(false);
-                    }
-                };
-                
-                fetchAuction();
-            }
-            
-        }, [id, token, bids]); 
-        
-        useEffect(() => {
-            if (auction) {
-                if (auction.highestBidder) {
-                    setHighestBidderName(auction.highestBidder);
-                    setHighestBidderProfilePic(auction.highestBidderProfilePic || ""); 
-                }
-            }
-        }, [auction]);    //for setting the timer
-    
-    useEffect(() => {
-        if (!auction) return;
-
-        if (!auction.endingDate || auction.mode !== 'dutch') return;
-
-        const endDate = new Date(auction.endingDate).getTime(); 
-        const startDate = new Date(auction.startingDate).getTime(); 
-        const updateCountdown = () => {
-            const now = new Date().getTime();
-            const distance = endDate - now;
-            const d1 = now - startDate;
-            if (distance <= 0) {
-                setTimeRemaining("EXPIRED");
-                return true; 
-            }
-
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes1 = Math.floor((d1/ (1000 * 60)));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            let timeString = '';
-            if (days > 0) timeString += `${days}d `;
-            timeString += `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            if (auction.mode === 'dutch') {
-                setAmount(String(auction.startingBid - minutes1*auction.currentBid));
-            }
-            setTimeRemaining(timeString);
-            return false; 
-        };
-
-        if (updateCountdown()) return;
-
-        const interval = setInterval(() => {
-            if (updateCountdown()) {
-                clearInterval(interval);
-            }
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diff % (1000 * 60)) / 1000);
+            setTimeRemaining(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
         }, 1000);
-
         return () => clearInterval(interval);
+    }, [auction]);
 
-    }, [auction]); 
-   
-    const handleSubmit = () =>{
+    const handleSubmit = () => {
+        if (!auction || !user) return;
         
-        if(!bids.find(((ele)=>ele._id === auction?._id)))addBid({
-            _id: String(id),
-            title:auction!.title,
-            mode:auction.mode,
-            currentBid: Number(amount),
-            bidderName:user!.username,
-            bidderId:user!.id
-        });
+        // Use user.username (string) instead of user (object)
+        setHighestBidderName(user.username);
+        setHighestBidderPic(user.profilePicture || "");
+
         placeBid({
-            mode:auction?.mode,
+            mode: auction.mode,
             auctionId: String(id),
             amount: Number(amount),
-            bidderName:user!.username,
-            bidderId:String(user?.id)
-        })
-        setHighestBidderProfilePic(user?.profilePicture || "");
-        setHighestBidderName(user?.username || "");
-    }
-    
-    if (loading) {
-        return <div className="min-h-screen flex items-center justify-center text-xl">Loading auction details...</div>;
-    }
+            bidderName: user.username,
+            bidderId: String(user.id || user._id)
+        });
+    };
 
-    if (error || !auction) {
-        return <div className="min-h-screen flex flex-col items-center justify-center text-xl text-red-600">
-            <AlertCircle size={32} className="mb-4" />
-            {error || "Auction details could not be loaded."}
-        </div>;
-    }
-    
-   
-    let auctionData = auction;
-    
+    if (loading) return <div className="p-10 text-center">Loading...</div>;
+    if (error || !auction) return <div className="p-10 text-center text-red-500">{error}</div>;
+
     return (
-        <div className="min-h-screen bg-[#F8F9FB] p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-            
                 <div className="lg:col-span-2 space-y-6">
-                    
-          
-                    <div className="relative h-[450px] rounded-3xl overflow-hidden group">
-                        <img 
-                            src={auctionData.image || "/api/placeholder/800/600"} 
-                            alt={auctionData.title}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                        
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-
-                        <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
-                            <div className="flex flex-wrap gap-3 mb-4">
-                                {seller && <ImageBadge icon={<Avatar className='h-5 w-5'><AvatarImage src={seller.profilePicture}   referrerPolicy="no-referrer" className="rounded-full object-fit"/></Avatar>} text={`Sold by ${seller.username}`} />}
-                            </div>
-                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{auctionData.title}</h1>
-                            <p className="text-gray-300 text-lg">{auctionData.description}</p>
+                    {/* Header Image Section */}
+                    <div className="relative h-[400px] rounded-3xl overflow-hidden shadow-lg">
+                        <img src={auction.image || "/placeholder.png"} className="w-full h-full object-cover" alt={auction.title} />
+                        <div className="absolute inset-0 bg-black/40" />
+                        <div className="absolute bottom-6 left-6 text-white">
+                            <h1 className="text-3xl font-bold">{auction.title}</h1>
+                            <p className="opacity-90">{auction.description}</p>
                         </div>
                     </div>
 
-                   
+                    {/* Info Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    
-                        <InfoCard 
-                            icon={<Clock size={24} />} 
-                            title="Time Remaining" 
-                        
-                            mainValue={timeRemaining} 
-                            subValue={timeRemaining === 'EXPIRED' ? "Auction has ended" : ""}
-                            iconColor="text-blue-500"
-                        />
-                            {
-                                auctionData.mode === 'standard'?
-                            <InfoCard 
-                            icon={
-                                <div className='bg-white'>
-                                    <Avatar className='h-5 w-5 rounded-full '>
-                                        <AvatarImage src={highestBidderProfilePic}   referrerPolicy="no-referrer" className="rounded-full object-fit"/>
-                                        <AvatarFallback>{highestBidderName[0]}</AvatarFallback>
-                                    </Avatar>
-                                </div>
-                            } 
-                            title="Highest Bidder" 
-                            mainValue={highestBidderName} 
-                            subValue={timeRemaining === 'EXPIRED' ? "Auction has ended" : ""}
-                            iconColor="text-blue-500"
-                        />:
-                        <></>
-                        }
-                    </div>
-                </div>
-
-          
-                <div className="space-y-6">
-                    
-          
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                      
-                        <div className="bg-orange-500 p-5 text-white flex items-center gap-2">
-                            <Gavel size={20} />
+                        <div className="bg-white p-6 rounded-2xl border shadow-sm flex items-center gap-4">
+                            <Clock className="text-blue-500" />
                             <div>
-                                <h2 className="font-bold text-lg leading-tight">Place Your Bid</h2>
-                                <p className="text-orange-100 text-sm">Enter your maximum bid amount</p>
+                                <p className="text-sm text-gray-500">Time Left</p>
+                                <p className="text-xl font-bold">{timeRemaining}</p>
                             </div>
                         </div>
 
-                        <div className="p-6 space-y-6">
-                     
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Bid Amount</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
-                                    <input 
-                                        type="number" 
-                                        defaultValue={auctionData.mode === 'standard'?auction.currentBid:amount} 
-                                        disabled = {auctionData.mode === 'dutch'}
-                                        onChange={(e)=>setAmount(e.target.value)}
-                                        className="w-full pl-10 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none font-bold text-gray-900 text-lg"
-                                    />
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-                                        <ChevronDown size={20} />
-                                    </div>
-                                </div>
-                                <p className="text-sm text-gray-500 mt-2">Starting bid: Rs {auction.startingBid}</p>
-                                {auction.mode === 'dutch'?<p className="text-sm text-gray-500 mt-2">Price Dropoff rate: Rs {auction.currentBid}</p>:<></>}
-                            </div>
-
-                           
-                            <button disabled={timeRemaining === 'EXPIRED'} className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 ${timeRemaining === 'EXPIRED' ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-orange-500 text-white hover:bg-orange-600 transition-colors cursor-pointer'}`} onClick={handleSubmit}>
-                                <Gavel size={20} />
-                                {timeRemaining === 'EXPIRED' ? 'Auction Ended' : 'Place Bid'}
-                            </button>
-                        </div>
-                    </div>
-
-
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default AuctionPage;
+                        {auction.mode === 'standard' && (
+                            <div className="bg-white p-6 rounded-2xl border shadow-sm flex items-center gap-4">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={highest
