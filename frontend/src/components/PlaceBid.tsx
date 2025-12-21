@@ -27,13 +27,13 @@ type user = {
 interface Auction {
         _id: string;
         title: string;
-        description: string;
+        description?: string;
         seller:user;
-        mode:string;
+        mode?:string;
         currentBid: number;
-        startingDate:number;
+        startingDate?:number;
         startingBid?: number;
-        endingDate: number; 
+        endingDate?: number; 
         image?: string;
     
 }
@@ -80,7 +80,10 @@ const AuctionPage: React.FC = () => {
             setError("Auction ID not found in URL.");
             return;
         }
-        
+        const ind = bids.find((ele)=>ele._id === auctionData._id)
+        if(ind){
+            setAuction(ind);
+        }
         const fetchAuction = async () => {
             setLoading(true);
             setError(null);
@@ -183,7 +186,8 @@ const AuctionPage: React.FC = () => {
     }
     
    
-    const auctionData = auction;
+    let auctionData = auction;
+    
     console.log("nice one",auctionData.currentBid,auctionData.startingBid);
     return (
         <div className="min-h-screen p-4 md:p-8 font-sans">

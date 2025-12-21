@@ -70,7 +70,7 @@ export function MyBids() {
   const user = useUserStore((s)=>s.user);
   const ongoing = bids.filter(ele => ele.status != 'completed'&& ele.seller._id != String(user?.id));
   const finished = bids.filter(ele => ele.status === 'completed'&& ele.seller._id != String(user?.id));
-  const hasOutbid = bids.some(auction => auction.currentBid > auction.bidHistory.find((ele)=>ele.bidder == String(user?.id))?.amount );
+  const hasOutbid = bids.some(auction => auction.status != 'completed' && auction.currentBid > auction.bidHistory.find((ele)=>ele.bidder == String(user?.id))?.amount );
   const myAuctions = bids.filter(ele=> ele.seller._id === String(user?.id));
   console.log("bids is",bids);
 
