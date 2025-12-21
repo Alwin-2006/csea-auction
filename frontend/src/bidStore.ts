@@ -9,16 +9,24 @@ type User = {
   _id:string;
 }
  type Auction = {
-  _id: string;
-  bidderName:string;
-  title:string;
-  status:string;
-  currentBid : number;
-  seller:User;
-  highestBidder:string;
-  bidderId: string;
-  createdAt: number;
-  bidHistory: Bid [];
+    _id: string;
+    title: string;
+    description?: string;
+    seller: User;
+    mode?: string;
+    currentBid: number;
+    startingDate?: number;
+    startingBid?: number;
+    endingDate?: number;
+    image?: string;
+    status?: 'active' | 'closed';
+    highestBidder?: string;
+    bidderId?: string;
+    createdAt?: number;
+    bidHistory?: {
+        bidder: string,
+        amount: number,
+    }[];
 };
 
 type BidStore = {

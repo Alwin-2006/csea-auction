@@ -19,23 +19,30 @@ import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com'
 
-type user = {
-    username:string,
-    profilePicture:string,
+interface User {
+    username: string;
+    profilePicture: string;
 }
 
 interface Auction {
-        _id: string;
-        title: string;
-        description?: string;
-        seller:user;
-        mode?:string;
-        currentBid: number;
-        startingDate?:number;
-        startingBid?: number;
-        endingDate?: number; 
-        image?: string;
-    
+    _id: string;
+    title: string;
+    description?: string;
+    seller: user;
+    mode?: string;
+    currentBid: number;
+    startingDate?: number;
+    startingBid?: number;
+    endingDate?: number;
+    image?: string;
+    status?: 'active' | 'closed';
+    highestBidder?: string;
+    bidderId?: string;
+    createdAt?: number;
+    bidHistory?: {
+        bidder: string,
+        amount: number,
+    }[];
 }
 
 
@@ -74,47 +81,57 @@ const AuctionPage: React.FC = () => {
     const token = localStorage.getItem('token'); 
     const [profile,setProfile] = useState("");
     const [highestBidder,setHighestBidder] = useState("");
+    const [seller, setSeller] = useState<user | null>(null);
     useEffect(() => {
         if (!id) {
             setLoading(false);
             setError("Auction ID not found in URL.");
             return;
         }
-        const ind = bids.find((ele)=>ele._id === auctionData._id)
-        if(ind){
-            setAuction(ind);
-        }
-        const fetchAuction = async () => {
-            setLoading(true);
-            setError(null);
 
-            try {
-                const response = await axios.get(`${API_URL}/api/bid/bids/${id}`, { 
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    }
-                });
-                setAuction(response.data.auction); 
-                setHighestBidder(response.data.highestBidder);
-                setProfile(response.data.profilePic);
-                
-
-            } catch (err) {
-                setError("Failed to fetch auction details.");
-                console.error("Fetch error:", err);
-
-            } finally {
-                setLoading(false);
+        const existingAuction = bids.find((bid) => bid._id === id);
+        if (existingAuction) {
+            setAuction(existingAuction);
+            if (typeof existingAuction.seller === 'object') {
+                setSeller(existingAuction.seller);
             }
-        };
+            setLoading(false);
+        } else {
+            const fetchAuction = async () => {
+                setLoading(true);
+                setError(null);
+
+                try {
+                    const response = await axios.get(`${API_URL}/api/bid/bids/${id}`, { 
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        }
+                    });
+                    setAuction(response.data.auction);
+                    if (typeof response.data.auction.seller === 'object') {
+                        setSeller(response.data.auction.seller);
+                    }
+                    addBid(response.data.auction);
+                    setHighestBidder(response.data.highestBidder);
+                    setProfile(response.data.profilePic);
+                } catch (err) {
+                    setError("Failed to fetch auction details.");
+                    console.error("Fetch error:", err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+            
+            fetchAuction();
+        }
         
-        fetchAuction();
-        
-    }, [id, token]); 
+    }, [id, token, bids]); 
     //for setting the timer
     
     useEffect(() => {
-        if (!auction || !auction.endingDate || auction.mode !== 'dutch') return;
+        if (!auction) return;
+
+        if (!auction.endingDate || auction.mode !== 'dutch') return;
 
         const endDate = new Date(auction.endingDate).getTime(); 
         const startDate = new Date(auction.startingDate).getTime(); 
@@ -136,7 +153,9 @@ const AuctionPage: React.FC = () => {
             let timeString = '';
             if (days > 0) timeString += `${days}d `;
             timeString += `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            setAmount(String(auctionData.startingBid - minutes1*auctionData.currentBid));
+            if (auction.mode === 'dutch') {
+                setAmount(String(auction.startingBid - minutes1*auction.currentBid));
+            }
             setTimeRemaining(timeString);
             return false; 
         };
@@ -188,7 +207,6 @@ const AuctionPage: React.FC = () => {
    
     let auctionData = auction;
     
-    console.log("nice one",auctionData.currentBid,auctionData.startingBid);
     return (
         <div className="min-h-screen p-4 md:p-8 font-sans">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -208,7 +226,7 @@ const AuctionPage: React.FC = () => {
 
                         <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
                             <div className="flex flex-wrap gap-3 mb-4">
-                                <ImageBadge icon={<Avatar className='h-5 w-5'><AvatarImage src={auctionData.seller.profilePicture}   referrerPolicy="no-referrer" className="rounded-full object-fit"/></Avatar>} text={`Sold by ${auctionData.seller.username}`} />
+                                {seller && <ImageBadge icon={<Avatar className='h-5 w-5'><AvatarImage src={seller.profilePicture}   referrerPolicy="no-referrer" className="rounded-full object-fit"/></Avatar>} text={`Sold by ${seller.username}`} />}
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{auctionData.title}</h1>
                             <p className="text-gray-300 text-lg">{auctionData.description}</p>
