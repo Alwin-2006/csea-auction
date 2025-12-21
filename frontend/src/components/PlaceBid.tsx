@@ -149,4 +149,49 @@ const AuctionPage: React.FC = () => {
                         {auction.mode === 'standard' && (
                             <div className="bg-white p-6 rounded-2xl border shadow-sm flex items-center gap-4">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarImage src={highest
+                                    <AvatarImage src={highestBidderPic} />
+                                    <AvatarFallback className="bg-orange-100 text-orange-600">
+                                        {/* Ensure we only render a string here */}
+                                        {highestBidderName[0]?.toUpperCase() || "?"}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-sm text-gray-500">Highest Bidder</p>
+                                    <p className="text-xl font-bold">
+                                        {/* CRITICAL FIX: Ensure this is a string */}
+                                        {String(highestBidderName)}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Bidding Sidebar */}
+                <div className="bg-white p-6 rounded-3xl border shadow-sm h-fit">
+                    <div className="flex items-center gap-2 mb-6 text-orange-600 font-bold">
+                        <Gavel /> <span>Place Your Bid</span>
+                    </div>
+                    <div className="space-y-4">
+                        <label className="text-sm font-medium">Bid Amount (₹)</label>
+                        <input 
+                            type="number" 
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-full p-3 bg-gray-50 border rounded-xl font-bold text-lg"
+                        />
+                        <button 
+                            onClick={handleSubmit}
+                            disabled={timeRemaining === "EXPIRED"}
+                            className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 transition-colors disabled:bg-gray-300"
+                        >
+                            {timeRemaining === "EXPIRED" ? "Auction Ended" : "Confirm Bid"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default AuctionPage;
