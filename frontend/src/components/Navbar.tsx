@@ -47,7 +47,7 @@ const Navbar = () => {
               SALE HOUSE
             </Link>
             {/* Desktop Links */}
-            <div className="hidden md:flex space-x-6">
+            <div className="hidden md:flex space-x-6 ">
               <Link to="/bids" className=" hover:text-amber-500 ">
                 Dashboard
               </Link>

@@ -186,7 +186,7 @@ const AuctionPage: React.FC = () => {
     const auctionData = auction;
     console.log("nice one",auctionData.currentBid,auctionData.startingBid);
     return (
-        <div className="min-h-screen bg-[#F8F9FB] p-4 md:p-8 font-sans">
+        <div className="min-h-screen p-4 md:p-8 font-sans">
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
             
