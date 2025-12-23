@@ -42,7 +42,6 @@ const Layout = () => {
             if (bids && Array.isArray(bids)) {
                 joinMultiple(
                     bids
-                        .filter((ele) => ele && ele.highestBidder === user?.id)
                         .map((bid) => bid._id),
                     user?.username
                 );
