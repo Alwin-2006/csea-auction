@@ -12,7 +12,7 @@ import { useRealtimeStore } from '@/socketstore.tsx';
 import { useBidStore } from '@/bidStore.ts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Update interface to match the populated backend data
 interface User {
@@ -33,13 +33,15 @@ interface Auction {
     startingBid: number;
     endingDate: number;
     image?: string;
+    highestBidderProfilePic?: string; // It's good to have this typed
 }
 
 const AuctionPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const placeBid = useRealtimeStore((s) => s.placeBid);
-    const bids = useBidStore((s) => s.bids);
-    const addBid = useBidStore((s) => s.addBid);
+    const joinAuction = useRealtimeStore((s) => s.joinAuction);
+    const on = useRealtimeStore((s) => s.on);
+    const off = useRealtimeStore((s) => s.off);
     const user = useUserStore((s) => s.user);
 
     const [auction, setAuction] = useState<Auction | null>(null);
@@ -63,8 +65,7 @@ const AuctionPage: React.FC = () => {
                 });
 
                 setAuction(response.data.auction);
-                
-                // IMPORTANT: Ensure we extract the string from the object
+                joinAuction(response.data.auction._id);
                 const hb = response.data.highestBidder;
                 setHighestBidderName(typeof hb === 'object' ? hb.username : (hb || "No bids yet"));
                 setHighestBidderPic(response.data.profilePic || "");
@@ -79,7 +80,32 @@ const AuctionPage: React.FC = () => {
             }
         };
         fetchAuction();
-    }, [id, token]);
+    }, [id, token, joinAuction]);
+
+    useEffect(() => {
+        const handleBidPlaced = (updatedAuction: Auction, bidderName: string) => {
+            if (updatedAuction._id === id) {
+                setAuction(prevAuction => {
+                    if (prevAuction) {
+                        return { ...prevAuction, currentBid: updatedAuction.currentBid };
+                    }
+                    return null;
+                });
+                
+                setHighestBidderName(bidderName);
+                if (updatedAuction.highestBidderProfilePic) {
+                    setHighestBidderPic(updatedAuction.highestBidderProfilePic);
+                }
+            }
+        };
+
+        on('bid-placed', handleBidPlaced);
+
+        // Clean up the listener when the component unmounts
+        return () => {
+            off('bid-placed', handleBidPlaced);
+        };
+    }, [id, on, off]);
 
     // Timer Logic
     useEffect(() => {
@@ -94,11 +120,11 @@ const AuctionPage: React.FC = () => {
                 clearInterval(interval);
                 return;
             }
-
+            const d = Math.floor((diff)/ (1000 * 60 * 60* 24));
             const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const s = Math.floor((diff % (1000 * 60)) / 1000);
-            setTimeRemaining(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+            setTimeRemaining(`${String(d).padStart(1, '0')}d ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
         }, 1000);
         return () => clearInterval(interval);
     }, [auction]);
@@ -106,7 +132,7 @@ const AuctionPage: React.FC = () => {
     const handleSubmit = () => {
         if (!auction || !user) return;
         
-        // Use user.username (string) instead of user (object)
+        // Optimistic UI update
         setHighestBidderName(user.username);
         setHighestBidderPic(user.profilePicture || "");
 
@@ -128,7 +154,7 @@ const AuctionPage: React.FC = () => {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Header Image Section */}
                     <div className="relative h-[400px] rounded-3xl overflow-hidden shadow-lg">
-                        <img src={auction.image || "/placeholder.png"} className="w-full h-full object-cover" alt={auction.title} />
+                        <img src={auction.image || "https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"} className="w-full h-full object-cover" alt={auction.title} />
                         <div className="absolute inset-0 bg-black/40" />
                         <div className="absolute bottom-6 left-6 text-white">
                             <h1 className="text-3xl font-bold">{auction.title}</h1>
@@ -151,14 +177,12 @@ const AuctionPage: React.FC = () => {
                                 <Avatar className="h-10 w-10">
                                     <AvatarImage src={highestBidderPic} />
                                     <AvatarFallback className="bg-orange-100 text-orange-600">
-                                        {/* Ensure we only render a string here */}
                                         {highestBidderName[0]?.toUpperCase() || "?"}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <p className="text-sm text-gray-500">Highest Bidder</p>
                                     <p className="text-xl font-bold">
-                                        {/* CRITICAL FIX: Ensure this is a string */}
                                         {String(highestBidderName)}
                                     </p>
                                 </div>

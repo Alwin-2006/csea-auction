@@ -1,357 +1,221 @@
-import { useState } from "react"
-import { Card, CardTitle, CardContent } from "./ui/card"
-import { Label } from "@/components/ui/label"
-import { Input } from "./ui/input";
-import { Textarea } from "@/components/ui/textarea"
-import { ArrowRightIcon, ArrowLeftIcon } from "lucide-react"
-import { Button } from "./ui/button";
-import { Calendar } from "@/components/ui/calendar"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarIcon, UploadCloud } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useUserStore } from "@/store";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
-
-interface User {
-    id: number,
-    username: string,
-    email: string,
-    password: string,
-    googleId: string,
-    createdAt: Date;
-}
-
-interface DateAndTimePickerProps {
-    type: 'opening' | 'closing';
-    dateState: Date | undefined;
-    setDateState: React.Dispatch<React.SetStateAction<Date | undefined>>;
-    timeState: string;
-    setTimeState: React.Dispatch<React.SetStateAction<string>>;
-}
-
-// Renamed and updated component to handle both date and time state correctly
-function DateAndTimePicker({ type, dateState, setDateState, timeState, setTimeState }: DateAndTimePickerProps) {
-    const [open, setOpen] = useState(false);
-    const label = type === 'opening' ? 'Starting Date' : 'Ending Date';
-
-    return (
-        <div className="flex gap-4">
-            <div className="flex flex-col gap-3">
-                <Label htmlFor={`date-picker-${type}`} className="px-1">
-                    Date
-                </Label>
-                <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            id={`date-picker-${type}`}
-                            className="w-32 justify-between font-normal"
-                        >
-                            {dateState ? dateState.toLocaleDateString() : "Select date"}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-                        <Calendar
-                            mode="single"
-                            selected={dateState}
-                            captionLayout="dropdown"
-                            onSelect={(date) => {
-                                setDateState(date);
-                                setOpen(false)
-                            }}
-                        />
-                    </PopoverContent>
-                </Popover>
-            </div>
-            <div className="flex flex-col gap-3">
-                <Label htmlFor={`time-picker-${type}`} className="px-1">
-                    Time
-                </Label>
-                <Input
-                    type="time"
-                    id={`time-picker-${type}`}
-                    step="1"
-                    value={timeState} // Bind value to state
-                    onChange={(e) => setTimeState(e.target.value)} // Update time state
-                    className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                />
-            </div>
-        </div>
-    )
-}
+const API_URL = import.meta.env.VITE_API_URL;
 
 function CreateBid() {
-    // Date and Time states
-    const [closingDate, setClosingDate] = useState<Date | undefined>(undefined);
-    const [openingDate, setOpeningDate] = useState<Date | undefined>(undefined);
-    const [openingTime, setOpeningTime] = useState('00:00:00'); // Default time
-    const [closingTime, setClosingTime] = useState('00:00:00'); // Default time
-
-    const nav = useNavigate();
-    const stored = useUserStore((state) => state.user);
+    const navigate = useNavigate();
+    const user = useUserStore((state) => state.user);
     const token = localStorage.getItem('token');
-    
-    // Form data states
-    const [currentStep, setCurrentStep] = useState(0);
-    const [title, setTitle] = useState("");
-    const [desc, setDesc] = useState("");
-    const [mode, setMode] = useState(0); // 0 for Standard, 1 for Dutch
-    const [role, setRole] = useState(""); // For Select component value ('Standard' or 'Dutch')
-    const [price, setPrice] = useState("");
-    const [rate, setRate] = useState(""); // Pricedrop rate for Dutch auction
 
-    const storedUser = stored;
-    const user: User | null = storedUser ? stored : null;
+    const [formData, setFormData] = useState({
+        title: "",
+        description: "",
+        startingBid: "",
+        mode: "standard",
+        pricedropRate: "",
+        startingDate: new Date(),
+        endingDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
+        image: null as File | null,
+    });
 
-    console.log("Current user:", user);
-    console.log("Auth Token:", token ? 'present' : 'missing');
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Helper function to combine Date and Time states
-    const combineDateAndTime = (
-        date: Date | undefined,
-        time: string
-      ): Date | undefined => {
-        if (!date || !time) return undefined;
-      
-        const [hours, minutes, seconds = '0'] = time.split(':');
-      
-        const combined = new Date(date);
-        combined.setHours(
-          Number(hours),
-          Number(minutes),
-          Number(seconds),
-          0
-        );
-      
-        return combined; // JS will store this internally as UTC
-      };
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { id, value } = e.target;
+        setFormData(prev => ({ ...prev, [id]: value }));
+    };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFormData(prev => ({ ...prev, image: e.target.files![0] }));
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // 1. Validation Checks
-        if (Number(price) < 5) {
-            alert("Minimum Bid must be 5 rs");
-            setPrice("");
+        setIsLoading(true);
+
+        if (Number(formData.startingBid) < 5) {
+            alert("Minimum starting bid must be at least ₹5.");
+            setIsLoading(false);
             return;
-        } else if (title.trim() === "") {
-            alert("Title is required");
+        }
+        if (!formData.title.trim()) {
+            alert("Title is required.");
+            setIsLoading(false);
+            return;
+        }
+        if (!user) {
+            alert("You must be logged in to create an auction.");
+            setIsLoading(false);
             return;
         }
 
-        // 2. Combine Date and Time for Submission
-        const finalOpeningDate = combineDateAndTime(openingDate, openingTime);
-        const finalClosingDate = combineDateAndTime(closingDate, closingTime);
+        const submissionData = new FormData();
+        submissionData.append('title', formData.title);
+        submissionData.append('description', formData.description);
+        submissionData.append('startingBid', formData.startingBid);
+        submissionData.append('currentBid', formData.mode === 'dutch' ? formData.pricedropRate : formData.startingBid);
+        submissionData.append('mode', formData.mode);
+        submissionData.append('seller', String(user.id)); // Corrected to use _id
+        submissionData.append('startingDate', formData.startingDate.toISOString());
+        submissionData.append('endingDate', formData.endingDate.toISOString());
         
-        if (!finalOpeningDate || !finalClosingDate) {
-            alert("Please select both a valid starting and ending date/time.");
-            return;
+        if (formData.image) {
+            submissionData.append('image', formData.image);
         }
-        console.log(finalOpeningDate);
-        console.log(finalClosingDate);
-        // 3. Prepare Data
-        const auctionData = {
-            title: title,
-            description: desc,
-            currentBid: role === 'Dutch'?rate:Number(price),
-            startingBid: Number(price),
-            mode: role === "Dutch" ? "dutch" : "standard",
-            seller: user ? user.id : null,
-            startingDate: finalOpeningDate,
-            endingDate: finalClosingDate,
-            // rate: role === "Dutch" ? Number(rate) : undefined, // Include rate for Dutch auction
-        };
+        if (formData.mode === 'dutch' && formData.pricedropRate) {
+            submissionData.append('pricedropRate', formData.pricedropRate);
+        }
 
-        console.log("Auction Data to Submit:", auctionData);
-        
-        // TODO: Implement actual API call using axios or fetch here.
-        // Example structure for API call:
-        
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com/api';
-            const response = await fetch(`${API_URL}/bid/create-bid`, {
+            const response = await fetch(`${API_URL}/api/bid/create-bid`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(auctionData),
+                body: submissionData,
             });
-            
+
             if (!response.ok) {
-                let errorMessage = `Failed to create auction. Status: ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorMessage = errorData.message || errorMessage;
-                } catch (e) {
-                    // The error response was not JSON.
-                    const textResponse = await response.text();
-                    errorMessage = textResponse || errorMessage;
-                }
-                throw new Error(errorMessage);
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to create auction.');
             }
-
-            // Handle success
-            nav('/');
-
+            navigate('/');
         } catch (error) {
             console.error("Submission Error:", error);
-            alert(`Error creating auction: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            alert(`Error: ${error instanceof Error ? error.message : 'An unknown error occurred.'}`);
+        } finally {
+            setIsLoading(false);
         }
-        
-
-    }
-
+    };
 
     return (
-        <>
-            <div className="flex flex-col justify-between gap-10">
-                <h1 className="flex text-6xl font-bold justify-center">
-                    Setup your Auction!
-                </h1>
-                
-                {/* --- Navigation & Steps --- */}
-                <div className="py-3 flex justify-center gap-4">
-                    <Button disabled={currentStep === 0} variant="outline" size="icon" onClick={() =>
-                        setCurrentStep(0)
-                    } >
-                        <ArrowLeftIcon />
-                    </Button>
-
-                    {currentStep === 0 ? (
-                        <div className="flex justify-center gap-10">
-                            <Card className="flex h-full text-4xl flex-col items-center p-5">
-                                <CardTitle>Whats your product about?</CardTitle>
-                                <CardContent className="flex flex-col justify-between gap-5 ">
-                                    <div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="title" className="text-xl">Title</Label>
-                                            <Input
-                                                id="title"
-                                                placeholder="Write your title here!"
-                                                required
-                                                onChange={(e) => { setTitle(e.target.value) }}
-                                                value={title}
-                                            />
-                                        </div>
+        <div className="container mx-auto py-12">
+            <Card className="max-w-4xl mx-auto ">
+                <CardHeader>
+                    <CardTitle className="text-3xl font-bold text-amber-400 tracking-tight">Create New Auction</CardTitle>
+                    <CardDescription>Fill out the details below to list your new item for auction.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form className="space-y-8" onSubmit={handleSubmit}>
+                        {/* Item Details Section */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Item Details</h3>
+                            <Separator />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="title">Title</Label>
+                                    <Input id="title" value={formData.title} onChange={handleInputChange} placeholder="e.g., Antique Wooden Chair" required />
+                                </div>
+                                <div className="space-y-2 md:row-span-2">
+                                    <Label htmlFor="description">Description</Label>
+                                    <Textarea id="description" value={formData.description} onChange={handleInputChange} placeholder="Describe your item in detail..." className="min-h-[120px]" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="image-upload">Item Image</Label>
+                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-primary">
+                                        <label htmlFor="image-upload" className="cursor-pointer w-full">
+                                            <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+                                            <p className="mt-2 text-sm text-gray-600">
+                                                {formData.image ? `Selected: ${formData.image.name}` : "Click to upload an image"}
+                                            </p>
+                                            <Input id="image-upload" type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+                                        </label>
                                     </div>
-                                    <div>
-                                        <Label htmlFor="photo-upload" className="text-xl">Photo</Label>
-                                        <Input id="photo-upload" type="file" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="text-4xl p-5 h-full">
-                                <CardTitle>Whats your Description?</CardTitle>
-                                <Textarea className="h-full mt-4" value={desc} onChange={(e) => setDesc(e.target.value)} />
-                            </Card>
+                                </div>
+                            </div>
                         </div>
-                    ) : (
-                        <div className="flex justify-center gap-5">
-                            <Card>
-                                <CardTitle className="flex h-full text-4xl flex-col items-center justify-center p-5">Mode</CardTitle>
-                                <CardContent className="flex flex-col justify-between items-center gap-10">
-                                    <Select onValueChange={(value) => {
-                                        setRole(value);
-                                        setMode(value === 'Standard' ? 0 : 1);
-                                    }} value={role}>
-                                        <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder="Mode of Auction" />
+
+                        {/* Auction Settings Section */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Auction Settings</h3>
+                            <Separator />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="mode">Auction Mode</Label>
+                                    <Select value={formData.mode} onValueChange={(value) => setFormData(p => ({ ...p, mode: value }))}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a mode" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectGroup>
-                                                <SelectItem value="Standard">Standard</SelectItem>
-                                                <SelectItem value="Dutch">Dutch Auction Mode</SelectItem>
-                                            </SelectGroup>
+                                            <SelectItem value="standard">Standard</SelectItem>
+                                            <SelectItem value="dutch">Dutch Auction</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex flex-col gap-3">
-                                            <Label>Starting price (minimum 5 rs)</Label>
-                                            <Input
-                                                placeholder="e.g., 500"
-                                                inputMode="numeric"
-                                                type="number"
-                                                value={price}
-                                                onChange={(e) => { setPrice(e.target.value) }}
-                                            />
-                                        </div>
-                                        {
-                                            role === "Dutch" ?
-                                                <div className="flex flex-col gap-3">
-                                                    <Label >Pricedrop rate</Label>
-                                                    <Input
-                                                        placeholder="e.g., 5"
-                                                        type="number"
-                                                        value={rate}
-                                                        onChange={(e) => { setRate(e.target.value) }}
-                                                    />
-                                                </div> : <></>
-                                        }
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="startingBid">Starting Bid (₹)</Label>
+                                    <Input id="startingBid" type="number" value={formData.startingBid} onChange={handleInputChange} placeholder="e.g., 500" required min="5" />
+                                </div>
+                                {formData.mode === 'dutch' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="pricedropRate">Price Drop Rate (₹ per hour)</Label>
+                                        <Input id="pricedropRate" type="number" value={formData.pricedropRate} onChange={handleInputChange} placeholder="e.g., 50" required={formData.mode === 'dutch'} />
                                     </div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardTitle className="flex h-full text-4xl flex-col items-center p-5">Auction Timeline</CardTitle>
-                                <CardContent>
-                                    <div className="flex flex-col gap-4 text-xl">
-                                        <div className="flex flex-col gap-3">
-                                            <h1 className="text-base font-semibold">Starting Date & Time:</h1>
-                                            <DateAndTimePicker
-                                                type="opening"
-                                                dateState={openingDate}
-                                                setDateState={setOpeningDate}
-                                                timeState={openingTime}
-                                                setTimeState={setOpeningTime}
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-3">
-                                            <h1 className="text-base font-semibold">Ending Date & Time:</h1>
-                                            <DateAndTimePicker
-                                                type="closing"
-                                                dateState={closingDate}
-                                                setDateState={setClosingDate}
-                                                timeState={closingTime}
-                                                setTimeState={setClosingTime}
-                                            />
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-                    
-                    {
-                        currentStep === 0 ?
-                            <Button variant="outline" size="icon" onClick={() =>
-                                setCurrentStep(1)
-                            } >
-                                <ArrowRightIcon />
-                            </Button> :
-                            <div>
-                                <Button onClick={handleSubmit}>
-                                    Submit
-                                </Button>
+                                )}
                             </div>
-                    }
-                </div>
-            </div>
-        </>
-    )
+                        </div>
+
+                        {/* Timeline Section */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Timeline</h3>
+                            <Separator />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                <div className="space-y-2">
+                                    <Label>Starting Date</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.startingDate && "text-muted-foreground")}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {formData.startingDate ? format(formData.startingDate, "PPP") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={formData.startingDate} onSelect={(date) => date && setFormData(p => ({ ...p, startingDate: date }))} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Ending Date</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.endingDate && "text-muted-foreground")}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {formData.endingDate ? format(formData.endingDate, "PPP") : <span>Pick a date</span>}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={formData.endingDate} onSelect={(date) => date && setFormData(p => ({ ...p, endingDate: date }))} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </CardContent>
+                <CardFooter>
+                    <Button type="submit" onClick={handleSubmit} disabled={isLoading} className="ml-auto">
+                        {isLoading ? "Creating..." : "Create Auction"}
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
 }
 
-export default CreateBid
+export default CreateBid;

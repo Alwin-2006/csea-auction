@@ -8,8 +8,10 @@ import { useUserStore } from "@/store"
 import { useBidStore } from "@/bidStore"
 
 
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Layout = () => {
+    
     const nav = useNavigate();
     const joinAuction = useRealtimeStore((s)=>s.joinAuction);
         const user = useUserStore((s)=>s.user);
@@ -22,10 +24,12 @@ const Layout = () => {
         useEffect(()=>{
             const fetch = async () =>{
                 try{
-                    const res = await axios.get(`https://csea-auction-site.onrender.com/api/bid/bids?id=${user?.id}`);  
+                    console.log(API_URL);
+                    const res = await axios.get(`${API_URL}/api/bid/bids?id=${user?.id}`);  
                     const data = res.data;
                     setBids(data.auctions); 
-                    console.log(data.auctions);
+                    console.log("bids is ",data.auctions);
+                    
                 }catch (err) {
                     console.error("Error fetching auctions:", err);
                 }
@@ -34,7 +38,7 @@ const Layout = () => {
            
         },[user]);
         useEffect(()=>{
-            joinMultiple(bids.map((bid)=>bid._id),user?.username);
+            joinMultiple(bids.filter((ele)=>ele.highestBidder === user?.id).map((bid)=>bid._id),user?.username);
         },[bids,user])
         
     return(

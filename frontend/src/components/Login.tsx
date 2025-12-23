@@ -6,7 +6,7 @@ import { Label } from "@radix-ui/react-label"
 import { useNavigate } from "react-router-dom"
 import { useUserStore } from "../store.ts";
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://csea-auction-site.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Login() {
   const nav = useNavigate()

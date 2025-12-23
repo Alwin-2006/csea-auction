@@ -17,22 +17,49 @@ const privateKey = process.env.PRIVATE_KEY; // Only this
 
 
 
-router.post('/create-bid', async (req,res) => {
-    try{
-        const data = req.body;
-        console.log("hi123",data);
-        const newBid = new Bid(req.body);
+import { uploadImage } from '../middleware/multer.js';
+import cloudinary from '../config/cloudinary.js';
+import authMiddleware from '../middleware/authMiddleware.js';
 
-        const saved = await newBid.save();
+router.post('/create-bid', authMiddleware, uploadImage, async (req, res) => {
+    try {
+        let imageUrl = '';
+
+        // 1. Check for an uploaded file and upload it to Cloudinary
+        if (req.file) {
+            const uploadResult = await new Promise((resolve, reject) => {
+                const stream = cloudinary.uploader.upload_stream(
+                    { folder: 'csea-auctions' },
+                    (error, result) => {
+                        if (error) return reject(error);
+                        resolve(result);
+                    }
+                );
+                stream.end(req.file.buffer);
+            });
+            imageUrl = uploadResult.secure_url;
+        }
+
+        // 2. Create a new Bid instance, ensuring the seller is the authenticated user
+        const newBidData = {
+            ...req.body,
+            image: imageUrl,
+            seller: req.user._id, // Securely set the seller from the authenticated user
+        };
+
+        const newBid = new Bid(newBidData);
+        await newBid.save();
         
         return res.status(201).json({
-            message:"Success!"
-        })
-    }catch(err){
-        console.error("error creating bid",err);
-        return res.status(500).json({error:err.message});
+            message: "Auction created successfully!",
+            auction: newBid,
+        });
+
+    } catch (err) {
+        console.error("Error creating bid:", err);
+        return res.status(500).json({ error: err.message || 'Internal server error' });
     }
-})
+});
 
 
 router.get('/bids', async (req, res) => {

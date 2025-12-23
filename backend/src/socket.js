@@ -9,7 +9,7 @@ let io;
 export const initializeSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: [process.env.FRONTEND_URL ,'http://localhost:5173'],
       methods: ['GET', 'POST'],
       credentials: true
     }
@@ -39,34 +39,48 @@ export const initializeSocket = (server) => {
     });
     // Place a bid
     socket.on('place-bid', async (bidData) => {
-      const { auctionId, amount, bidderId, bidderName,mode } = bidData;
-      // Broadcast bid to all users in the auction room
-      console.log(bidData);
-      const newBid = await Bid.findByIdAndUpdate(
-        auctionId,
-        {
-          $set: {
-            highestBidder: `${bidderId}`,
-            currentBid:amount,
-          },
-        
-         $push:{
-          bidHistory:{
-            bidder:bidderId,
-            amount:amount, 
-          }
-         } 
-        ,
-         $inc: { totalBids: 1 } 
-      }
-      ,
-      {
-        new:true
-      }
-      )
+      const { auctionId, amount, bidderId, bidderName, mode } = bidData;
       
-      io.to(`auction-${auctionId}`).emit('bid-placed', newBid,bidderName);
-      console.log(`Bid placed on auction ${auctionId}: $${amount}`);
+      try {
+        // Find the user placing the bid to get their profile picture
+        const bidder = await User.findById(bidderId);
+        const profilePic = bidder ? bidder.profilePicture : '';
+
+        // Update the auction document
+        const updatedBid = await Bid.findByIdAndUpdate(
+          auctionId,
+          {
+            $set: {
+              highestBidder: bidderId,
+              currentBid: amount,
+            },
+            $push: {
+              bidHistory: {
+                bidder: bidderId,
+                amount: amount,
+              }
+            },
+            $inc: { totalBids: 1 }
+          },
+          { new: true }
+        );
+
+        if (updatedBid) {
+          // Convert the Mongoose document to a plain object to add the profile pic
+          const updatedBidObject = updatedBid.toObject();
+          updatedBidObject.highestBidderProfilePic = profilePic;
+          
+          // Emit the event with the enhanced object
+          socket.broadcast.to(`auction-${auctionId}`).emit('bid-placed', updatedBidObject, bidderName);
+          socket.emit('bid-placed', updatedBidObject, bidderName);
+          
+          console.log(`Bid placed on auction ${auctionId}: $${amount}`);
+        } else {
+          console.error(`Failed to find and update auction ${auctionId}`);
+        }
+      } catch (error) {
+        console.error('Error processing bid:', error);
+      }
     });
 
     // Update auction status

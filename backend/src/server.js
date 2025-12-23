@@ -12,10 +12,10 @@ import { initAuctionCron } from './controller/sendEmail.js';
 
 const app = express();
 const server = createServer(app);
-const PORT = process.env.PORT;
+const PORT = process.env.PORT ;
 // CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin:[ process.env.FRONTEND_URL , 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   optionsSuccessStatus: 200,

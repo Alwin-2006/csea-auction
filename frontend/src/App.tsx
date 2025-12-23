@@ -17,6 +17,8 @@ import { min } from 'date-fns'
 import { useUserStore } from "./store.ts";
 import { useRealtimeStore } from './socketstore.tsx'
 import Autoplay from "embla-carousel-autoplay"
+import {AdvancedImage} from '@cloudinary/react';
+import {Cloudinary} from "@cloudinary/url-gen";
 
 
 
@@ -65,7 +67,7 @@ function ItemCard({item}:ItemCardProps){
         <Link to={`/bid/${item._id}`}>
         <div className="bg-white w-70 h-100 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow cursor-pointer group flex flex-col">
           <div className="h-64 overflow-hidden flex flex-col">
-              hi
+          <img src = {item.image} className='object-contain w-full '/>
           </div>
           <div className="-mt-12 flex justify-end px-4 pointer-events-none z-10">
             <div className="px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full flex items-center gap-1 pointer-events-auto shadow-lg border border-stone-200">
@@ -91,6 +93,7 @@ function ItemCard({item}:ItemCardProps){
 }
 
 
+const API_URL = import.meta.env.VITE_API_URL;
 function App() {
   const [bids,setBids]= useState<AuctionItem[]>([]);
   const user = useUserStore((state)=>state.user);
@@ -104,7 +107,7 @@ function App() {
   React.useEffect(() => {
     const fetchBids = async () => {
       try {
-        const res = await axios.get("https://csea-auction-site.onrender.com/api/bid/bids"); 
+        const res = await axios.get(`${API_URL}/api/bid/bids`); 
         setBids(res.data.auctions); 
       } catch (err) {
         console.error("Error fetching auctions:", err);

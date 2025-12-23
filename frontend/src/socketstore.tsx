@@ -6,7 +6,8 @@ import { toast } from "sonner"
 import { useNavigate } from "react-router-dom";
 import { useBidStore } from "./bidStore";
 
-const socket: Socket = io("https://csea-auction-site.onrender.com", {
+const API_URL = import.meta.env.VITE_API_URL;
+const socket: Socket = io(API_URL, {
   autoConnect: false,
   withCredentials: true,
 });
@@ -38,8 +39,10 @@ type RealtimeState = {
     amount: number;
     bidderId: string;
     bidderName: string;
-  }) => void; 
+  }) => void;
   joinMultiple: (auctionIds:string [],username:string) => void;
+  on: (event: string, callback: (...args: any[]) => void) => void;
+  off: (event: string, callback?: (...args: any[]) => void) => void;
 };
 const { user } = useUserStore.getState();
 
@@ -60,11 +63,10 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => (
 
     socket.on("bid-placed", ( bid,name ) => {
       console.log("hello",bids);
-      if(user?.id != bid.highestBidder){ 
+      if(user?.id != bid.highestBidder ){
         toast.message(`${name} has out bid you!Click here to view your bid`);
       }
       updateBid(bid);
-      console.log("hello hey",bid);
       
     })
 
@@ -107,5 +109,11 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => (
   },
   placeBid: (data) => {
     socket.emit("place-bid", data);
+  },
+  on: (event, callback) => {
+    socket.on(event, callback);
+  },
+  off: (event, callback) => {
+    socket.off(event, callback);
   },
 }));
