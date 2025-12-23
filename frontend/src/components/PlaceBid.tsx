@@ -67,13 +67,14 @@ const AuctionPage: React.FC = () => {
                 setAuction(response.data.auction);
                 joinAuction(response.data.auction._id);
                 const hb = response.data.highestBidder;
-                setHighestBidderName(typeof hb === 'object' ? hb.username : (hb || "No bids yet"));
+                setHighestBidderName(hb && typeof hb === 'object' ? hb.username : (hb || "No bids yet"));
                 setHighestBidderPic(response.data.profilePic || "");
 
                 if (response.data.auction.mode === 'standard') {
                     setAmount(String(response.data.auction.currentBid));
                 }
             } catch (err) {
+                console.error("error",err);
                 setError("Failed to fetch auction details.");
             } finally {
                 setLoading(false);

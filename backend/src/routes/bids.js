@@ -99,9 +99,12 @@ router.get('/bids/:id', async (req, res) => {
         }
         
         let highestBid;
-        if(auctionDetails.bidHistory && auctionDetails.bidHistory.length > 0){
-            const lastBid = auctionDetails.bidHistory[auctionDetails.bidHistory.length -1];
-            highestBid= lastBid.bidder.username;
+        if (auctionDetails.bidHistory && auctionDetails.bidHistory.length > 0) {
+            const lastBid = auctionDetails.bidHistory[auctionDetails.bidHistory.length - 1];
+            // Defensively check if bidder exists before accessing username
+            if (lastBid && lastBid.bidder) {
+                highestBid = lastBid.bidder.username;
+            }
         }
 
         return res.status(200).json({ 
