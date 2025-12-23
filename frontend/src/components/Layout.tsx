@@ -39,8 +39,15 @@ const Layout = () => {
             fetchBids();
         },[user, setBids]);
         useEffect(()=>{
-            joinMultiple(bids.filter((ele)=>ele.highestBidder === user?.id).map((bid)=>bid._id),user?.username);
-        },[bids,user])
+            if (bids && Array.isArray(bids)) {
+                joinMultiple(
+                    bids
+                        .filter((ele) => ele && ele.highestBidder === user?.id)
+                        .map((bid) => bid._id),
+                    user?.username
+                );
+            }
+        },[bids, user, joinMultiple])
         
     return(
             <div className="flex flex-col text-xl min-h-screen ">
