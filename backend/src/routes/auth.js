@@ -72,6 +72,7 @@ router.get('/google/callback', async (req, res) => {
                 profilePicture: picture,
                 password: '' // No password for OAuth users
             });
+            await user.save();
         }
 
         // Generate our own JWT to manage the session
