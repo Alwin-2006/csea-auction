@@ -107,10 +107,14 @@ function App() {
   React.useEffect(() => {
     const fetchBids = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/bid/bids`); 
-        setBids(res.data.auctions); 
+        const res = await axios.get(`${API_URL}/api/bid/bids`);
+        // Ensure res.data.auctions is an array before setting state
+        const auctions = res.data?.auctions || [];
+        setBids(auctions);
       } catch (err) {
         console.error("Error fetching auctions:", err);
+        // Also set to an empty array on error to be safe
+        setBids([]);
       }
     };
   

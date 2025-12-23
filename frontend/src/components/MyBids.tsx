@@ -66,20 +66,37 @@ const myBids = [
 ];
 
 export function MyBids() {
-  const bids = useBidStore((s)=>s.bids);
-  const user = useUserStore((s)=>s.user);
-  const ongoing = bids.filter(ele => ele.status != 'completed'&& ele.seller._id != String(user?.id));
-  const finished = bids.filter(ele => ele.status === 'completed'&& ele.seller._id != String(user?.id));
-  const hasOutbid = bids.some(auction => auction.status != 'completed' && auction.currentBid > auction.bidHistory.find((ele)=>ele.bidder == String(user?.id))?.amount );
-  const myAuctions = bids.filter(ele=> ele.seller._id === String(user?.id));
-  console.log("bids is",bids);
+  const bids = useBidStore((s) => s.bids) || []; // Ensure bids is always an array
+  const user = useUserStore((s) => s.user);
 
-  const salutations = ["Hello","Welcome"];
+  // Defensive filtering logic
+  const ongoing = bids.filter(ele => ele && ele.status !== 'completed' && ele.seller?._id !== String(user?._id));
+  const finished = bids.filter(ele => ele && ele.status === 'completed' && ele.seller?._id !== String(user?._id));
+  const myAuctions = bids.filter(ele => ele && ele.seller?._id === String(user?._id));
 
+  const hasOutbid = bids.some(auction => {
+    if (!auction || !auction.bidHistory || auction.status === 'completed') return false;
+    const myBidsInAuction = auction.bidHistory.filter(b => b.bidder === String(user?._id));
+    if (myBidsInAuction.length === 0) return false;
+    const myHighestBid = Math.max(...myBidsInAuction.map(b => b.amount));
+    return auction.currentBid > myHighestBid;
+  });
+
+  console.log("bids is", bids);
+
+  const salutations = ["Hello", "Welcome"];
+
+  const findMyHighestBid = (bidHistory: any[]) => {
+    if (!bidHistory || !user) return { amount: 0 };
+    const myBids = bidHistory.filter(b => b.bidder === String(user._id));
+    if (myBids.length === 0) return { amount: 0 };
+    return myBids.reduce((max, bid) => bid.amount > max.amount ? bid : max, myBids[0]);
+  };
+  
   return (
     <div className="bg-white rounded-4xl p-10">
       <h1 className='flex flex-col gap-5 md:gap-5 items-start font-bold self-center max-w-7xl mx-auto  px-4 sm:px-6 lg:px-8 md:text-[150px] my-5 text-amber-400'>
-        <p className='m-0  text-7xl md:text-[100px]'>{salutations[Math.floor(Math.random() * salutations.length)]},</p> 
+        <p className='m-0  text-7xl md:text-[100px]'>{salutations[Math.floor(Math.random() * salutations.length)]},</p>
         <p className='w-fit h-fit text-7xl md:text-[150px]'>{user?.username.split(" ")[0]}</p>
       </h1>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -102,187 +119,135 @@ export function MyBids() {
         <Separator />
           <TabsContent value ="ongoingAuctions" >
               {/* Active Bids */}
-              {ongoing.length > 0 ? (
-                <div className="mb-12">
-                  <h3 className="text-slate-900 mb-6 text-4xl">Ongoing Bids</h3>
-                  <div className="space-y-4">
-                    {ongoing.map((bid) => (
-                      <div
-                        key={bid._id}
-                        className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
-                      > 
-                        <Link to={`/bid/${bid._id}`}>
-                        <div className="flex gap-6">
-                          
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-4">
-                              <div>
-                                <h4 className="text-slate-900 mb-2">{bid.title}</h4>
-                                {bid.currentBid === bid.bidHistory.find((ele)=>ele.bidder == String(user?.id))?.amount ? (
-                                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full">
-                                    <CheckCircle className="w-4 h-4" />
-                                    <span>Winning</span>
-                                  </div>
-                                ) : (
-                                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-700 rounded-full">
-                                    <XCircle className="w-4 h-4" />
-                                    <span>Outbid</span>
-                                  </div>
-                                )}
-                              </div>
-                              {/*<div className="flex items-center gap-2 text-slate-600">
-                                <Clock className="w-4 h-4" />
-                                <span>{bid.endTime}</span>
-                              </div>*/}
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                              <div>
-                                <div className="text-slate-500 mb-1">Your Bid</div>
-                                <div className="text-slate-900">Rs {bid.bidHistory
-        .filter(bid => bid.bidder === String(user?.id))
-        .reduce( (max, bid) => bid.amount > max.amount ? bid : max,{ amount: -1 } as typeof bid.bidHistory[0]).amount}</div>
-                              </div>
-                              <div>
-                                <div className="text-slate-500 mb-1">Current Bid</div>
-                                <div className="text-amber-600">
-                                  Rs {bid.currentBid}
+              {ongoing.map((bid) => {
+                const myHighestBid = findMyHighestBid(bid.bidHistory);
+                const isWinning = bid.currentBid === myHighestBid.amount;
+                
+                return (
+                  <div key={bid._id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <Link to={`/bid/${bid._id}`}>
+                      <div className="flex gap-6">
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h4 className="text-slate-900 mb-2">{bid.title}</h4>
+                              {isWinning ? (
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full">
+                                  <CheckCircle className="w-4 h-4" />
+                                  <span>Winning</span>
                                 </div>
-                              </div>
+                              ) : (
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-700 rounded-full">
+                                  <XCircle className="w-4 h-4" />
+                                  <span>Outbid</span>
+                                </div>
+                              )}
                             </div>
-                            {!bid && (
-                              <button className="mt-4 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
-                                Increase Bid
-                              </button>
-                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-6">
+                            <div>
+                              <div className="text-slate-500 mb-1">Your Bid</div>
+                              <div className="text-slate-900">Rs {myHighestBid.amount}</div>
+                            </div>
+                            <div>
+                              <div className="text-slate-500 mb-1">Current Bid</div>
+                              <div className="text-amber-600">Rs {bid.currentBid}</div>
+                            </div>
                           </div>
                         </div>
-                        </Link>
                       </div>
-                    ))}
+                    </Link>
                   </div>
+                )
+              })}
+              {ongoing.length === 0 && (
+                <div className='text-4xl my-10 h-screen flex  justify-center'>
+                    You aren't participating in any ongoing auctions!
                 </div>
-              ):
-              <div className='text-4xl my-10 h-screen flex  justify-center'>
-                  You aren't participating in any ongoing auctions!
-              </div>
-              }
+              )}
             </TabsContent>
             <TabsContent value='pastBids'>
-            {finished.length > 0 ? (
-                <div className="mb-12">
-                  <h3 className="text-slate-900 mb-6 text-4xl">Past Bids</h3>
-                  <div className="space-y-4">
-                    {finished.map((bid) => (
-                      <div
-                        key={bid._id}
-                        className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
-                      > 
-                        <Link to={`/bid/${bid._id}`}>
+              {finished.map((bid) => {
+                  const myHighestBid = findMyHighestBid(bid.bidHistory);
+                  const didIWin = bid.highestBidder === user?._id;
+
+                  return (
+                    <div key={bid._id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                      <Link to={`/bid/${bid._id}`}>
                         <div className="flex gap-6">
-                          
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-4">
                               <div>
                                 <h4 className="text-slate-900 mb-2">{bid.title}</h4>
-                                {bid.currentBid === bid.bidHistory.find((ele)=>ele.bidder == String(user?.id))?.amount ? (
-                                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full">
-                                    <CheckCircle className="w-4 h-4" />
-                                    <span>Won</span>
-                                  </div>
+                                {didIWin ? (
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full">
+                                      <CheckCircle className="w-4 h-4" />
+                                      <span>Won</span>
+                                    </div>
                                 ) : (
-                                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-700 rounded-full">
-                                    <XCircle className="w-4 h-4" />
-                                    <span>Lost</span>
-                                  </div>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-50 text-red-700 rounded-full">
+                                      <XCircle className="w-4 h-4" />
+                                      <span>Lost</span>
+                                    </div>
                                 )}
                               </div>
-                              {/*<div className="flex items-center gap-2 text-slate-600">
-                                <Clock className="w-4 h-4" />
-                                <span>{bid.endTime}</span>
-                              </div>*/}
                             </div>
                             <div className="grid grid-cols-2 gap-6">
                               <div>
                                 <div className="text-slate-500 mb-1">Your Bid</div>
-                                <div className="text-slate-900">Rs {bid.bidHistory
-        .filter(bid => bid.bidder === String(user?.id))
-        .reduce( (max, bid) => bid.amount > max.amount ? bid : max,{ amount: -1 } as typeof bid.bidHistory[0]).amount}</div>
+                                <div className="text-slate-900">Rs {myHighestBid.amount}</div>
                               </div>
                               <div>
-                                <div className="text-slate-500 mb-1">Current Bid</div>
-                                <div className="text-amber-600">
-                                  Rs {bid.currentBid}
-                                </div>
+                                <div className="text-slate-500 mb-1">Winning Bid</div>
+                                <div className="text-amber-600">Rs {bid.currentBid}</div>
                               </div>
                             </div>
-                            {!bid && (
-                              <button className="mt-4 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
-                                Increase Bid
-                              </button>
-                            )}
                           </div>
                         </div>
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
+                      </Link>
+                    </div>
+                  )
+              })}
+              {finished.length === 0 && (
+                <div className='text-4xl my-10 h-screen flex  justify-center'>
+                    You don't have any past auctions
                 </div>
-              ):
-              <div className='text-4xl my-10 h-screen flex  justify-center'>
-                  You don't have any past auctions
-              </div>
-              }
+              )}
             </TabsContent>
             <TabsContent value= "myAuctions">
-            {myAuctions.length > 0 ? (
-                <div className="mb-12">
-                  <h3 className="text-slate-900 mb-6 text-4xl">Your Auctions</h3>
-                  <div className="space-y-4">
-                    {myAuctions.map((bid) => (
-                      <div
-                        key={bid._id}
-                        className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
-                      > 
-                        <Link to={`/bid/${bid._id}`}>
-                        <div className="flex gap-6">
-                          
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between mb-4">
-                              <div>
-                                <h4 className="text-slate-900 mb-2">{bid.title}</h4>
-                                
-                              </div>
-                              {/*<div className="flex items-center gap-2 text-slate-600">
-                                <Clock className="w-4 h-4" />
-                                <span>{bid.endTime}</span>
-                              </div>*/}
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                              <div>
-                                <div className="text-slate-500 mb-1">Current Bid</div>
-                                <div className="text-amber-600">
-                                  Rs {bid.currentBid}
+              {myAuctions.length > 0 ? (
+                  <div className="mb-12">
+                    <h3 className="text-slate-900 mb-6 text-4xl">Your Auctions</h3>
+                    <div className="space-y-4">
+                      {myAuctions.map((bid) => (
+                        <div key={bid._id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"> 
+                          <Link to={`/bid/${bid._id}`}>
+                            <div className="flex gap-6">
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between mb-4">
+                                  <div>
+                                    <h4 className="text-slate-900 mb-2">{bid.title}</h4>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-6">
+                                  <div>
+                                    <div className="text-slate-500 mb-1">Current Bid</div>
+                                    <div className="text-amber-600">Rs {bid.currentBid}</div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                            {!bid && (
-                              <button className="mt-4 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">
-                                Increase Bid
-                              </button>
-                            )}
-                          </div>
+                          </Link>
                         </div>
-                        </Link>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
+                ) : ( 
+                <div className='text-4xl my-10 h-screen flex flex-col gap-10 items-center'>
+                  <div className='flex flex-row items-center'>No auctions?<img src="https://cdn3.emoji.gg/emojis/9174-no-bitches-megamind.png" width="64px" height="64px" alt="no_bitches_megamind" /></div>
+                  <div className='flex items-center'><Button><Link to="/new-bids">Create Auction</Link></Button></div>
                 </div>
-              ):  
-              <div className='text-4xl my-10 h-screen flex flex-col gap-10 items-center'>
-                <div className='flex flex-row items-center'>No auctions?<img src="https://cdn3.emoji.gg/emojis/9174-no-bitches-megamind.png" width="64px" height="64px" alt="no_bitches_megamind" /></div>
-                <div className='flex items-center'><Button><Link to="/new-bids">Create Auction</Link></Button></div>
-              </div>
-              }
+              )}
             </TabsContent>
       </Tabs>
       </div>
