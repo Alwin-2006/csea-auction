@@ -22,21 +22,22 @@ const Layout = () => {
             useRealtimeStore.getState().connect();
         }, []);
         useEffect(()=>{
-            const fetch = async () =>{
+            const fetchBids = async () =>{
+                if (!user) return;
                 try{
-                    console.log(API_URL);
-                    const res = await axios.get(`${API_URL}/api/bid/bids?id=${user?.id}`);  
-                    const data = res.data;
-                    setBids(data.auctions); 
-                    console.log("bids is ",data.auctions);
-                    
-                }catch (err) {
+                    const res = await axios.get(`${API_URL}/api/bid/bids?id=${user.id}`);
+                    // Ensure data.auctions is an array before setting it
+                    const auctions = res.data?.auctions || [];
+                    setBids(auctions);
+                    console.log("bids is ", auctions);
+                } catch (err) {
                     console.error("Error fetching auctions:", err);
+                    // In case of an error, ensure bids is not undefined
+                    setBids([]);
                 }
             }
-            if(user)fetch();
-           
-        },[user]);
+            fetchBids();
+        },[user, setBids]);
         useEffect(()=>{
             joinMultiple(bids.filter((ele)=>ele.highestBidder === user?.id).map((bid)=>bid._id),user?.username);
         },[bids,user])
