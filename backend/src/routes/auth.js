@@ -218,15 +218,23 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ error: 'Invalid credentials' });
-    }
+    let user = await User.findOne({ email });
 
-    // Compare passwords
-    const isMatch = await bcryptjs.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ error: 'Invalid credentials' });
+    if (!user) {
+      // If user does not exist, create a new one
+      const username = email.split('@')[0]; // Use email prefix as username
+      user = new User({
+        username,
+        email,
+        password
+      });
+      await user.save();
+    } else {
+      // If user exists, compare passwords
+      const isMatch = await bcryptjs.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ error: 'Invalid credentials' });
+      }
     }
 
     const userPayload = {
