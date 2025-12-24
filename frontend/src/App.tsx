@@ -77,7 +77,7 @@ function ItemCard({item}:ItemCardProps){
           
           <div className="p-6 pt-4">
             <h3 className="text-slate-900 mb-2">{item.title}</h3>
-            <p className="text-slate-600 mb-4">{item.description.substring(0,35)}{item.description.length > 35?"...":""}</p>
+            <p className="text-slate-600 mb-4">{item.description.substring(0,25)}{item.description.length > 25?"...":""}</p>
             
             <div className="flex items-start justify-between">         
                 <Card className={`${item.mode === 'dutch'?"bg-black":"bg-amber-400" } text-white self-start p-4`}>
