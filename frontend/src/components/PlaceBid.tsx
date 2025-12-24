@@ -43,7 +43,6 @@ const AuctionPage: React.FC = () => {
     const on = useRealtimeStore((s) => s.on);
     const off = useRealtimeStore((s) => s.off);
     const user = useUserStore((s) => s.user);
-
     const [auction, setAuction] = useState<Auction | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -132,7 +131,10 @@ const AuctionPage: React.FC = () => {
 
     const handleSubmit = () => {
         if (!auction || !user) return;
-        
+        if(Number(amount) <= auction.currentBid){
+            alert(`Current Bid is ${auction.currentBid}. You need to place a bid higher than that!`);
+            return;
+        }
         // Optimistic UI update
         setHighestBidderName(user.username);
         setHighestBidderPic(user.profilePicture || "");
