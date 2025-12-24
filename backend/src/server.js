@@ -7,6 +7,8 @@ import { initializeSocket } from './socket.js';
 import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import bidRoutes from './routes/bids.js';
+import authMiddleware from './middleware/authMiddleware.js';
+import imageRoutes from './routes/image.js';
 import { initAuctionCron } from './controller/sendEmail.js';
 
 
@@ -39,7 +41,8 @@ initializeSocket(server);
 // Routes
 console.log('Registering auth routes...');
 app.use('/api/auth', authRoutes); 
-app.use('/api/bid', bidRoutes);
+app.use('/api/bid', authMiddleware, bidRoutes);
+app.use('/api/image', authMiddleware, imageRoutes);
 
 // Basic route
 app.get('/api/health', (req, res) => {
