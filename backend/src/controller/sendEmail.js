@@ -1,14 +1,14 @@
 import cron from 'node-cron';
 import { google } from 'googleapis';
 import Bid from '../models/Bids.js';
-import SystemSettings from '../models/SystemSettings.js'; // Import the new SystemSettings model
+import SystemSettings from '../models/SystemSettings.js'; 
 
 
 const oAuth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  // The redirect URI doesn't matter for server-side refresh token flow, but it must be one of the authorized URIs in your Google Cloud Console.
-  `${process.env.BACKEND_URL || 'https://csea-auction-site.onrender.com'}/api/auth/google/sender-callback` // Use the sender-callback URI here
+ 
+  `${process.env.BACKEND_URL || 'https://csea-auction-site.onrender.com'}/api/auth/google/sender-callback` 
 );
 
 async function sendEmail(recipientEmail, subject, htmlBody) {
@@ -18,20 +18,20 @@ async function sendEmail(recipientEmail, subject, htmlBody) {
       throw new Error('Gmail sender is not configured. Please authorize the sender account.');
     }
 
-    // Set the refresh token for the specific user
+
     oAuth2Client.setCredentials({ refresh_token: settings.gmailRefreshToken });
 
-    // Get a new access token
+
     const { token: accessToken } = await oAuth2Client.getAccessToken();
 
-    // Re-initialize the auth client with the new access token
+
     oAuth2Client.setCredentials({ access_token: accessToken });
 
     const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
 
-    // The email needs to be base64url encoded
+
     const emailParts = [
-      `From: Your Auction App <${settings.gmailSenderEmail}>`, // Use the configured sender email
+      `From: Your Auction App <${settings.gmailSenderEmail}>`,
       `To: ${recipientEmail}`,
       'Content-Type: text/html; charset=utf-8',
       'MIME-Version: 1.0',
@@ -44,7 +44,7 @@ async function sendEmail(recipientEmail, subject, htmlBody) {
     const encodedEmail = Buffer.from(email).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
     await gmail.users.messages.send({
-      userId: 'me', // 'me' refers to the authenticated user (the sender specified by refreshToken)
+      userId: 'me',
       requestBody: {
         raw: encodedEmail,
       },
@@ -55,9 +55,9 @@ async function sendEmail(recipientEmail, subject, htmlBody) {
 
   } catch (err) {
     console.error('Gmail API Error:', err.response ? err.response.data : err.message);
-    // If the token is revoked or expired, handle re-authorization
+    
     if (err.response && err.response.data.error === 'invalid_grant') {
-        // Remove the invalid refresh token from SystemSettings
+
         await SystemSettings.findOneAndUpdate({}, { $unset: { gmailRefreshToken: "", gmailSenderEmail: "" } });
         console.error(`Invalid refresh token for system sender. Please re-authorize the sender account.`);
     }

@@ -19,7 +19,7 @@ export const initializeSocket = (server) => {
     
     console.log('New user connected:', socket.id);
     
-    // Join auction room
+   
     socket.on('join-auction', (auctionId) => {
       socket.join(`auction-${auctionId}`);
       console.log(`User ${socket.id} joined auction ${auctionId}`);
@@ -32,21 +32,20 @@ export const initializeSocket = (server) => {
         if(username)console.log(username," joined ",auctionId);
       });
     })
-    // Leave auction room
+
     socket.on('leave-auction', (auctionId) => {
       socket.leave(`auction-${auctionId}`);
       console.log(`User ${socket.id} left auction ${auctionId}`);
     });
-    // Place a bid
+
     socket.on('place-bid', async (bidData) => {
       const { auctionId, amount, bidderId, bidderName, mode } = bidData;
       
       try {
-        // Find the user placing the bid to get their profile picture
         const bidder = await User.findById(bidderId);
         const profilePic = bidder ? bidder.profilePicture : '';
 
-        // Update the auction document
+
         const updatedBid = await Bid.findByIdAndUpdate(
           auctionId,
           {
@@ -66,11 +65,10 @@ export const initializeSocket = (server) => {
         );
 
         if (updatedBid) {
-          // Convert the Mongoose document to a plain object to add the profile pic
+          
           const updatedBidObject = updatedBid.toObject();
           updatedBidObject.highestBidderProfilePic = profilePic;
-          
-          // Emit the event with the enhanced object
+
           socket.broadcast.to(`auction-${auctionId}`).emit('bid-placed', updatedBidObject, bidderName);
           socket.emit('bid-placed', updatedBidObject, bidderName);
           
@@ -83,7 +81,7 @@ export const initializeSocket = (server) => {
       }
     });
 
-    // Update auction status
+
     socket.on('auction-ended', (auctionId) => {
       io.to(`auction-${auctionId}`).emit('auction-finished', {
         auctionId,
@@ -92,12 +90,11 @@ export const initializeSocket = (server) => {
       console.log(`Auction ${auctionId} has ended`);
     });
 
-    // Notify auction updates
+
     socket.on('update-auction', (auctionData) => {
       io.to(`auction-${auctionData.auctionId}`).emit('auction-updated', auctionData);
     });
 
-    // Handle disconnection
     socket.on('disconnect', () => {
       console.log('User disconnected:', socket.id);
     });

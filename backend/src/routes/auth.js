@@ -10,24 +10,21 @@ dotenv.config();
 
 const router = express.Router();
 
-// This client is for the server-side flow and requires the client secret.
-// The redirect URI MUST be added to your Google Cloud Console authorized URIs.
+
 const oAuth2Client = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
   `${process.env.BACKEND_URL || 'https://csea-auction-site.onrender.com'}/api/auth/google/callback`
 );
 
-// New OAuth2Client specifically for sender authorization.
-// This one uses a different redirect URI for clarity and separation,
-// which must also be registered in Google Cloud Console.
+
 const senderOAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     `${process.env.BACKEND_URL || 'https://csea-auction-site.onrender.com'}/api/auth/google/sender-callback`
 );
 
-// Route to initiate the Google OAuth redirect flow
+
 router.get('/google', (req, res) => {
   const authorizeUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -36,12 +33,11 @@ router.get('/google', (req, res) => {
         'https://www.googleapis.com/auth/userinfo.email',
         'openid'
     ],
-    prompt: 'consent' // Force consent screen every time
+    prompt: 'consent'
   });
   res.redirect(authorizeUrl);
 });
 
-// Route to handle the callback from Google
 router.get('/google/callback', async (req, res) => {
     try {
         const { code } = req.query;
@@ -49,11 +45,11 @@ router.get('/google/callback', async (req, res) => {
             return res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
         }
 
-        // Exchange the authorization code for tokens
+
         const { tokens } = await oAuth2Client.getToken(code);
         oAuth2Client.setCredentials(tokens);
 
-        // Get user profile information
+       
         const ticket = await oAuth2Client.verifyIdToken({
             idToken: tokens.id_token,
             audience: process.env.GOOGLE_CLIENT_ID,
@@ -62,7 +58,7 @@ router.get('/google/callback', async (req, res) => {
         const payload = ticket.getPayload();
         const { sub, email, name, picture } = payload;
 
-        // Find or create user in the database
+
         let user = await User.findOne({ email });
         if (!user) {
             user = new User({
@@ -70,12 +66,12 @@ router.get('/google/callback', async (req, res) => {
                 email,
                 googleId: sub,
                 profilePicture: picture,
-                password: '' // No password for OAuth users
+                password: '' 
             });
             await user.save();
         }
 
-        // Generate our own JWT to manage the session
+
         const userPayload = {
             id: user._id,
             username: user.username,
@@ -84,7 +80,6 @@ router.get('/google/callback', async (req, res) => {
         };
         const jwtToken = jwt.sign(userPayload, process.env.JWT_SECRET);
         
-        // Redirect to a specific frontend route that can handle the token
         res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${jwtToken}`);
 
     } catch (error) {
@@ -94,7 +89,7 @@ router.get('/google/callback', async (req, res) => {
 });
 
 
-// Route to initiate the Google OAuth redirect flow
+
 router.get('/google', (req, res) => {
   const authorizeUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -103,27 +98,26 @@ router.get('/google', (req, res) => {
         'https://www.googleapis.com/auth/userinfo.email',
         'openid'
     ],
-    prompt: 'consent' // Force consent screen every time
+    prompt: 'consent'
   });
   res.redirect(authorizeUrl);
 });
 
-// Route to initiate authorization for the dedicated email sender account
 router.get('/google/authorize-sender', (req, res) => {
     const authorizeUrl = senderOAuth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: [
           'https://www.googleapis.com/auth/userinfo.profile',
           'https://www.googleapis.com/auth/userinfo.email',
-          'https://www.googleapis.com/auth/gmail.send', // Request Gmail sending permission
+          'https://www.googleapis.com/auth/gmail.send',
           'openid'
       ],
-      prompt: 'consent' // Force consent screen every time
+      prompt: 'consent' 
     });
     res.redirect(authorizeUrl);
 });
 
-// Callback for the dedicated email sender account
+
 router.get('/google/sender-callback', async (req, res) => {
     try {
         const { code } = req.query;
@@ -137,7 +131,7 @@ router.get('/google/sender-callback', async (req, res) => {
             return res.status(500).send('No refresh token received. Ensure "offline" access is requested and user consents.');
         }
 
-        // Get user profile information to identify the sender email
+
         const ticket = await senderOAuth2Client.verifyIdToken({
             idToken: tokens.id_token,
             audience: process.env.GOOGLE_CLIENT_ID,
@@ -145,14 +139,13 @@ router.get('/google/sender-callback', async (req, res) => {
         const payload = ticket.getPayload();
         const senderEmail = payload.email;
 
-        // Save or update the refresh token in SystemSettings
         await SystemSettings.findOneAndUpdate(
-            { gmailSenderEmail: senderEmail }, // Find by email
+            { gmailSenderEmail: senderEmail },
             { 
                 gmailRefreshToken: tokens.refresh_token,
                 gmailSenderEmail: senderEmail 
             },
-            { upsert: true, new: true, setDefaultsOnInsert: true } // Create if not exists, return new doc
+            { upsert: true, new: true, setDefaultsOnInsert: true } 
         );
 
         res.send('Gmail sender account authorized successfully! You can close this window.');
@@ -164,7 +157,6 @@ router.get('/google/sender-callback', async (req, res) => {
 });
 
 
-// Traditional signup
 router.post('/signup', async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -173,13 +165,11 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Create new user
     const user = new User({
       username,
       email,
@@ -195,7 +185,7 @@ router.post('/signup', async (req, res) => {
         profilePicture: user.profilePicture
     };
 
-    // Generate JWT token
+
     const token = jwt.sign(userPayload, process.env.JWT_SECRET);
 
     res.json({
@@ -209,7 +199,7 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-// Traditional login
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -221,8 +211,8 @@ router.post('/login', async (req, res) => {
     let user = await User.findOne({ email });
 
     if (!user) {
-      // If user does not exist, create a new one
-      const username = email.split('@')[0]; // Use email prefix as username
+
+      const username = email.split('@')[0]; 
       user = new User({
         username,
         email,
@@ -230,7 +220,6 @@ router.post('/login', async (req, res) => {
       });
       await user.save();
     } else {
-      // If user exists, compare passwords
       const isMatch = await bcryptjs.compare(password, user.password);
       if (!isMatch) {
         return res.status(400).json({ error: 'Invalid credentials' });
@@ -244,7 +233,6 @@ router.post('/login', async (req, res) => {
         profilePicture: user.profilePicture
     };
 
-    // Generate JWT token
     const token = jwt.sign(userPayload, process.env.JWT_SECRET);
 
     res.json({

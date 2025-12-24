@@ -11,7 +11,7 @@ import fetch from 'node-fetch';
 
 const serviceID = process.env.EMAIL_SERVICE_ID;
 const templateID = process.env.TEMPLATE_ID;
-const privateKey = process.env.PRIVATE_KEY; // Only this
+const privateKey = process.env.PRIVATE_KEY; 
 
 
 
@@ -25,7 +25,7 @@ router.post('/create-bid', authMiddleware, uploadImage, async (req, res) => {
     try {
         let imageUrl = '';
 
-        // 1. Check for an uploaded file and upload it to Cloudinary
+
         if (req.file) {
             const uploadResult = await new Promise((resolve, reject) => {
                 const stream = cloudinary.uploader.upload_stream(
@@ -40,11 +40,10 @@ router.post('/create-bid', authMiddleware, uploadImage, async (req, res) => {
             imageUrl = uploadResult.secure_url;
         }
 
-        // 2. Create a new Bid instance, ensuring the seller is the authenticated user
         const newBidData = {
             ...req.body,
             image: imageUrl,
-            seller: req.user._id, // Securely set the seller from the authenticated user
+            seller: req.user._id, 
         };
 
         const newBid = new Bid(newBidData);
@@ -101,7 +100,6 @@ router.get('/bids/:id', async (req, res) => {
         let highestBid;
         if (auctionDetails.bidHistory && auctionDetails.bidHistory.length > 0) {
             const lastBid = auctionDetails.bidHistory[auctionDetails.bidHistory.length - 1];
-            // Defensively check if bidder exists before accessing username
             if (lastBid && lastBid.bidder) {
                 highestBid = lastBid.bidder.username;
             }
