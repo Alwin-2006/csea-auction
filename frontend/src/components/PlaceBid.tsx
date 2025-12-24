@@ -35,7 +35,13 @@ interface Auction {
     image?: string;
     highestBidderProfilePic?: string; // It's good to have this typed
 }
-
+interface ImageBadgeProps { icon: React.ReactNode; text: string; }
+const ImageBadge: React.FC<ImageBadgeProps> = ({ icon, text }) => (
+    <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-sm font-medium">
+        {icon}
+        <span>{text}</span>
+    </div>
+);
 const AuctionPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const placeBid = useRealtimeStore((s) => s.placeBid);
@@ -163,6 +169,9 @@ const AuctionPage: React.FC = () => {
                             <h1 className="text-3xl font-bold">{auction.title}</h1>
                             <p className="opacity-90">{auction.description}</p>
                         </div>
+                        <div className="flex flex-wrap gap-3 mb-4">
+                                <ImageBadge icon={<Avatar className='h-5 w-5'><AvatarImage src={auction.seller.profilePicture}   referrerPolicy="no-referrer" className="rounded-full object-fit"/></Avatar>} text={`Sold by ${auction.seller.username}`} />
+                         </div>
                     </div>
 
                     {/* Info Cards */}
