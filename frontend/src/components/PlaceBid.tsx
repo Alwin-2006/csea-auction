@@ -166,12 +166,12 @@ const AuctionPage: React.FC = () => {
                         <img src={auction.image || "https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"} className="w-full h-full object-cover" alt={auction.title} />
                         <div className="absolute inset-0 bg-black/40" />
                         <div className="absolute bottom-6 left-6 text-white">
+                            <div className="flex flex-wrap gap-3 mb-4">
+                                    <ImageBadge icon={<Avatar className='h-5 w-5'><AvatarImage src={auction.seller.profilePicture}   referrerPolicy="no-referrer" className="rounded-full object-fit"/></Avatar>} text={`Sold by ${auction.seller.username}`} />
+                            </div>
                             <h1 className="text-3xl font-bold">{auction.title}</h1>
                             <p className="opacity-90">{auction.description}</p>
                         </div>
-                        <div className="flex flex-wrap gap-3 mb-4">
-                                <ImageBadge icon={<Avatar className='h-5 w-5'><AvatarImage src={auction.seller.profilePicture}   referrerPolicy="no-referrer" className="rounded-full object-fit"/></Avatar>} text={`Sold by ${auction.seller.username}`} />
-                         </div>
                     </div>
 
                     {/* Info Cards */}
