@@ -133,7 +133,7 @@ const AuctionPage: React.FC = () => {
         if (!auction || !user) return;
         if(Number(amount) <= auction.currentBid){
             alert(`Current Bid is ${auction.currentBid}. You need to place a bid higher than that!`);
-            return;
+            return
         }
         // Optimistic UI update
         setHighestBidderName(user.username);

@@ -12,83 +12,29 @@ import {
 import { Separator } from '@radix-ui/react-select';
 import { Button } from './ui/button';
 
-const myBids = [
-  {
-    id: 1,
-    title: 'Diamond Necklace',
-    image: 'https://images.unsplash.com/photo-1481980235850-66e47651e431?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWFtb25kJTIwamV3ZWxyeXxlbnwxfHx8fDE3NjQ4MjQ3MDZ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    myBid: 85000,
-    currentBid: 85000,
-    isLeading: true,
-    endTime: '4h 32m',
-    status: 'active',
-  },
-  {
-    id: 2,
-    title: 'First Edition Book Set',
-    image: 'https://images.unsplash.com/photo-1757360133602-afff0a359d10?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyYXJlJTIwYm9vayUyMGNvbGxlY3Rpb258ZW58MXx8fHwxNzY0ODc1NzY0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    myBid: 425000,
-    currentBid: 450000,
-    isLeading: false,
-    endTime: '6h 15m',
-    status: 'outbid',
-  },
-  {
-    id: 3,
-    title: 'Rolex Daytona',
-    image: 'https://images.unsplash.com/photo-1680810897186-372717262131?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjB3YXRjaCUyMGF1Y3Rpb258ZW58MXx8fHwxNzY0ODc1NzYyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    myBid: 175000,
-    currentBid: 175000,
-    isLeading: true,
-    endTime: '8h 20m',
-    status: 'active',
-  },
-  {
-    id: 4,
-    title: 'Victorian Writing Desk',
-    image: 'https://images.unsplash.com/photo-1544691560-fc2053d97726?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbnRpcXVlJTIwZnVybml0dXJlfGVufDF8fHx8MTc2NDg0NDMxNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    myBid: 11000,
-    currentBid: 11000,
-    isLeading: true,
-    endTime: 'Ended',
-    status: 'past',
-  },
-  {
-    id: 5,
-    title: 'Hermès Birkin Bag',
-    image: 'https://images.unsplash.com/photo-1591348278863-a8fb3887e2aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBoYW5kYmFnfGVufDF8fHx8MTc2NDgxNTA0M3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-    myBid: 90000,
-    currentBid: 95000,
-    isLeading: false,
-    endTime: 'Ended',
-    status: 'past',
-  },
-];
-
 export function MyBids() {
   const bids = useBidStore((s) => s.bids) || []; // Ensure bids is always an array
   const user = useUserStore((s) => s.user);
 
   // Defensive filtering logic
-  const ongoing = bids.filter(ele => ele && ele.status !== 'completed' && ele.seller?._id !== String(user?._id));
-  const finished = bids.filter(ele => ele && ele.status === 'completed' && ele.seller?._id !== String(user?._id));
-  const myAuctions = bids.filter(ele => ele && ele.seller?._id === String(user?._id));
-
+  const ongoing = bids.filter(ele => ele && ele.status !== 'completed' && ele.seller?._id !== String(user?.id));
+  const finished = bids.filter(ele => ele && ele.status === 'completed' && ele.seller?._id !== String(user?.id));
+  const myAuctions = bids.filter(ele => ele && ele.seller?._id === String(user?.id));
+console.log(ongoing);
   const hasOutbid = bids.some(auction => {
     if (!auction || !auction.bidHistory || auction.status === 'completed') return false;
-    const myBidsInAuction = auction.bidHistory.filter(b => b.bidder === String(user?._id));
+    const myBidsInAuction = auction.bidHistory.filter(b => b.bidder === String(user?.id));
     if (myBidsInAuction.length === 0) return false;
     const myHighestBid = Math.max(...myBidsInAuction.map(b => b.amount));
     return auction.currentBid > myHighestBid;
   });
 
-  console.log("bids is", bids);
 
   const salutations = ["Hello", "Welcome"];
 
   const findMyHighestBid = (bidHistory: any[]) => {
     if (!bidHistory || !user) return { amount: 0 };
-    const myBids = bidHistory.filter(b => b.bidder === String(user._id));
+    const myBids = bidHistory.filter(b => b.bidder === String(user.id));
     if (myBids.length === 0) return { amount: 0 };
     return myBids.reduce((max, bid) => bid.amount > max.amount ? bid : max, myBids[0]);
   };
@@ -169,7 +115,7 @@ export function MyBids() {
             <TabsContent value='pastBids'>
               {finished.map((bid) => {
                   const myHighestBid = findMyHighestBid(bid.bidHistory);
-                  const didIWin = bid.highestBidder === user?._id;
+                  const didIWin = bid.highestBidder === user?.id;
 
                   return (
                     <div key={bid._id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">

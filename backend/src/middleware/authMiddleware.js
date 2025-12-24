@@ -10,11 +10,8 @@ const authMiddleware = async (req, res, next) => {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
 
-      // Verify token
-      // IMPORTANT: Make sure to add JWT_SECRET to your .env file
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Get user from the token payload (assuming the payload has the user's ID)
       req.user = await User.findById(decoded.id).select('-password');
       
       if (!req.user) {
