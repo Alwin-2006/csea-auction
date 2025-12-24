@@ -207,7 +207,7 @@ const AuctionPage: React.FC = () => {
                         />
                         <button 
                             onClick={handleSubmit}
-                            disabled={timeRemaining === "EXPIRED"}
+                            disabled={timeRemaining === "EXPIRED" || auction.seller._id === String(user?.id)}
                             className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 transition-colors disabled:bg-gray-300"
                         >
                             {timeRemaining === "EXPIRED" ? "Auction Ended" : "Confirm Bid"}
