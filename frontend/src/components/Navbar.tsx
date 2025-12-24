@@ -95,9 +95,7 @@ const Navbar = () => {
                   <Link to="/new-bids" className="text-lg">
                     New Auction
                   </Link>
-                  <Link to="/contact" className="text-lg">
-                    Contact
-                  </Link>
+                  <Button className="bg-amber-500 p-3 rounded-2xl text-white" onClick = {handleLogout}>Logout</Button>
                 </div>
               </SheetContent>
             </Sheet>
