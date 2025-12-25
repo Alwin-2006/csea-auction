@@ -125,31 +125,13 @@ function App() {
   return (
     <>
     <div className='flex flex-col justify-between items-center text-sm md:text-lg bg-white h-full'>
-          <div className='flex  justify-center items-center '>
-              <Carousel className=" flex flex-col p-0 " plugins={[
-        Autoplay({
-          delay: 5000,
-        }),
-      ]}>
-              <CarouselContent className='aspect-video ' >
-                {trending.map((ele, index) => (
-                  <CarouselItem key={index} className=''>
-                    <div className="  ">
-                      <Card className=''>
-                        <CardContent className="">
-                          <span className="font-semibold "><img src = {ele} className='object-contain w-full '/></span>
-                        </CardContent>
-                      </Card>
-                    </div>  
-                  </CarouselItem>
-                ))}
-               
-              </CarouselContent>
-              <CarouselPrevious className=" bg-black text-white absolute left-10 top-1/2 -translate-y-1/2 z-10" />
-              <CarouselNext className=" bg-black text-white absolute right-10 top-1/2 -translate-y-1/2 z-10" />
-            </Carousel>
-          </div>
-
+        
+            <div className="gradient-bg w-full">
+              <div className='flex flex-col items-center text-5xl md:text-9xl md:gap-20 gap-5 text-white my-20 fade-in-up'>
+                <div>The <span className='font-bold text-black'>PERFECT</span> Place</div>
+                <span className='text-2xl md:text-6xl text-black'>Where the best deals are made!</span>
+              </div>
+            </div>
           <div className="py-16 text-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="mb-12 self-start">

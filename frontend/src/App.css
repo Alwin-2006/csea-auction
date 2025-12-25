@@ -127,3 +127,43 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-down {
+  animation: fadeInDown 0.5s ease-out forwards;
+}
+
+.fade-in-down-delayed {
+  animation: fadeInDown 0.5s ease-out 0.5s forwards;
+  animation-fill-mode: forwards;
+  opacity: 0;
+}
+
+.gradient-bg {
+  background: linear-gradient(to bottom, #fbbf24, #ffffff);
+}
