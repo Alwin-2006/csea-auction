@@ -3,23 +3,12 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import * as React from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel"
+import { Card, } from "@/components/ui/card"
 import { Link } from 'react-router-dom'
 import axios from 'axios'
-import { min } from 'date-fns'
 import { useUserStore } from "./store.ts";
-import { useRealtimeStore } from './socketstore.tsx'
-import Autoplay from "embla-carousel-autoplay"
 import { useInView } from 'react-intersection-observer';
-import {AdvancedImage} from '@cloudinary/react';
-import {Cloudinary} from "@cloudinary/url-gen";
+
 
 
 
@@ -32,7 +21,7 @@ export interface AuctionItem {
   startingDate:Date,
   endingDate: Date,
   mode:string,
-  image: string;   // or string if coming from API
+  image: string;   
 }
 interface ItemCardProps {
   item: AuctionItem;
