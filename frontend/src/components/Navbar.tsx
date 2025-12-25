@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom"
 import { useUserStore } from "../store.ts";
-import { useEffect } from "react";
 import {
   Avatar,
   AvatarFallback,
@@ -18,17 +17,10 @@ import {
 } from "@/components/ui/avatar"
 
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  profilePicture: string;
-  // add fields if needed
-}
+
 
 
 const Navbar = () => {
-    const token = localStorage.getItem('token');
     const stored = useUserStore.getState().user;
     const clearUser = useUserStore((state) => state.clearUser);
     const user = stored ? stored : null;

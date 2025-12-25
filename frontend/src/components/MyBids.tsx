@@ -20,7 +20,7 @@ export function MyBids() {
   const ongoing = bids.filter(ele => ele && ele.status !== 'completed' && ele.seller?._id !== String(user?.id));
   const finished = bids.filter(ele => ele && ele.status === 'completed' && ele.seller?._id !== String(user?.id));
   const myAuctions = bids.filter(ele => ele && ele.seller?._id === String(user?.id));
-console.log(ongoing);
+
   const hasOutbid = bids.some(auction => {
     if (!auction || !auction.bidHistory || auction.status === 'completed') return false;
     const myBidsInAuction = auction.bidHistory.filter(b => b.bidder === String(user?.id));

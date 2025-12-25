@@ -30,23 +30,19 @@ function Login() {
       });
 
       const data = await response.json();
-      console.log("Server response:", data);
 
       if (!response.ok) {
         setError(data.error || "Login failed");
         return;
       }
 
-      // Save token
       localStorage.setItem("token", data.token);
       console.log("Token saved");
 
-      // Update Zustand store
       setUser(data.user);
       console.log("User store after setUser:", useUserStore.getState().user);
       if (localStorage.getItem("token")) nav("/");
-      // Navigate after store update
-       // only navigate here, not via any parent effect
+
     } catch (err) {
       console.error("Login error:", err);
       setError("Network error. Please try again.");
@@ -58,7 +54,7 @@ function Login() {
 
   useEffect(() => {
     if (user) {
-      nav("/"); // only redirect if user exists
+      nav("/"); 
     }
   }, [user]);
   

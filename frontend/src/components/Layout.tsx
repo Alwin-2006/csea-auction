@@ -26,11 +26,8 @@ const Layout = () => {
                 if (!user) return;
                 try{
                     const res = await axios.get(`${API_URL}/api/bid/bids?id=${user.id}`);
-                    console.log(API_URL);
-                    // Ensure data.auctions is an array before setting it
                     const auctions = res.data?.auctions || [];
                     setBids(auctions);
-                    console.log("bids is ", auctions);
                 } catch (err) {
                     console.error("Error fetching auctions:", err);
                     // In case of an error, ensure bids is not undefined

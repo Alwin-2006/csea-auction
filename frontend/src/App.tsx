@@ -36,7 +36,6 @@ function ItemCard({item}:ItemCardProps){
       const now = new Date().getTime();
       const date = new Date(item.endingDate).getTime() ; // endingDate from your item
       const distance = date - now;
-      console.log(new Date(item.endingDate),new Date());
       if (distance <= 0) {
         setHours(0);
         setMinutes(0);
@@ -115,7 +114,6 @@ function App() {
     fetchBids();
     
   }, []);
-  console.log(bids);
   return (
     <>
     <div className='flex flex-col justify-between items-center text-sm md:text-lg bg-white h-full'>
