@@ -17,6 +17,7 @@ import { min } from 'date-fns'
 import { useUserStore } from "./store.ts";
 import { useRealtimeStore } from './socketstore.tsx'
 import Autoplay from "embla-carousel-autoplay"
+import { useInView } from 'react-intersection-observer';
 import {AdvancedImage} from '@cloudinary/react';
 import {Cloudinary} from "@cloudinary/url-gen";
 
@@ -97,6 +98,10 @@ const API_URL = import.meta.env.VITE_API_URL;
 function App() {
   const [bids,setBids]= useState<AuctionItem[]>([]);
   const user = useUserStore((state)=>state.user);
+  const { ref, inView } = useInView({
+    triggerOnce: true,
+    threshold: 0.1,
+  });
   const trending = ["https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1765871321366-c2b86bd243b0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDN8Ym84alFLVGFFMFl8fGVufDB8fHx8fA%3D%3D",
     "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -139,8 +144,12 @@ function App() {
                 <p className="text-slate-600">Don't miss out on these trending auctions</p>
               </div>
               
-              <div className="flex flex-col md:grid md:grid-cols-3  justify-center gap-4">
-                {bids.map((card, index) => <ItemCard item = {card} key={index}  />)}
+              <div ref={ref} className="flex flex-col md:grid md:grid-cols-3  justify-center gap-4">
+                {bids.map((card, index) => (
+                  <div key={index} className={inView ? 'card-fade-in-up' : 'opacity-0'}>
+                    <ItemCard item={card} />
+                  </div>
+                ))}
               </div>
 
               <div className="mt-12 text-center">

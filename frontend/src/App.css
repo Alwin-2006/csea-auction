@@ -167,3 +167,15 @@
 .gradient-bg {
   background: linear-gradient(to bottom, #fbbf24, #ffffff);
 }
+
+.card-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.card-fade-in-up:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.card-fade-in-up:nth-child(3) {
+  animation-delay: 0.2s;
+}
