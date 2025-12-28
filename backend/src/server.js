@@ -39,7 +39,7 @@ initializeSocket(server);
 
 console.log('Registering auth routes...');
 app.use('/api/auth', authRoutes); 
-app.use('/api/bid', authMiddleware, bidRoutes);
+app.use('/api/bid', bidRoutes);
 
 
 
