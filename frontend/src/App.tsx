@@ -103,7 +103,13 @@ function App() {
         const res = await axios.get(`${API_URL}/api/bid/bids`);
         // Ensure res.data.auctions is an array before setting state
         const auctions = res.data?.auctions || [];
-        setBids(auctions);
+        // Filter for ongoing bids: current date < ending date
+        const ongoingAuctions = auctions.filter((auction: AuctionItem) => {
+          const endingTime = new Date(auction.endingDate).getTime();
+          const currentTime = new Date().getTime();
+          return endingTime > currentTime;
+        });
+        setBids(ongoingAuctions);
       } catch (err) {
         console.error("Error fetching auctions:", err);
         // Also set to an empty array on error to be safe
