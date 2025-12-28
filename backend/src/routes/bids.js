@@ -66,7 +66,7 @@ router.get('/bids', async (req, res) => {
         const { id } = req.query;
         
         let ongoingAuctions;
-        if(!id){ ongoingAuctions = await Bid.find({ status: 'pending' }); }
+        if(!id){ ongoingAuctions = await Bid.find({ status: 'pending',endingDate:{$gt:new Date()}}); }
         else {
              ongoingAuctions = await Bid.find({$or:[{"bidHistory.bidder":id},{seller:id}]})
               .populate('seller', 'username email')
