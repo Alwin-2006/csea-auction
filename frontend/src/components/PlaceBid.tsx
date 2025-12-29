@@ -173,9 +173,8 @@ const AuctionPage: React.FC = () => {
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
                     {/* Header Image Section */}
-                    {auction.image?
                     <div className="relative h-[400px] rounded-3xl overflow-hidden shadow-lg">
-                        <img src={auction.image} className="w-full h-full object-cover" alt={auction.title} />
+                        <img src={auction.image || "https://images.unsplash.com/photo-1600003014755-ba31aa59c4b6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"} className="w-full h-full object-cover" alt={auction.title} />
                         <div className="absolute inset-0 bg-black/40" />
                         <div className="absolute bottom-6 left-6 text-white">
                             <div className="flex flex-wrap gap-3 mb-4">
@@ -185,12 +184,7 @@ const AuctionPage: React.FC = () => {
                             <p className="opacity-90">{auction.description}</p>
                         </div>
                     </div>
-                        :
-                        <div className='bg-gray-500 flex items-center justify-center'>
-                                Seller didnt upload picture so im just gonna put this here
-                        </div>
-                        
-                    }
+
                     {/* Info Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-white p-6 rounded-2xl border shadow-sm flex items-center gap-4">
@@ -235,7 +229,7 @@ const AuctionPage: React.FC = () => {
                         />
                         <button 
                             onClick={handleSubmit}
-                            disabled={timeRemaining === "EXPIRED" || auction.seller._id === String(user?.id)||isDisabled}
+                            disabled={timeRemaining === "EXPIRED" || auction.seller._id === String(user?.id)||isDisabled }
                             className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 transition-colors disabled:bg-gray-300"
                         >
                             {timeRemaining === "EXPIRED" ? "Auction Ended" : "Confirm Bid"}
