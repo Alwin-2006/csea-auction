@@ -37,7 +37,7 @@ function ItemCard({item}:ItemCardProps){
       const date = new Date(item.endingDate).getTime() ; // endingDate from your item
       const distance = date - now;
       if (distance <= 0) {
-        setHours(0);
+        setHours(0); 
         setMinutes(0);
         setSeconds(0);
         clearInterval(interval);
@@ -103,13 +103,7 @@ function App() {
         const res = await axios.get(`${API_URL}/api/bid/bids`);
         // Ensure res.data.auctions is an array before setting state
         const auctions = res.data?.auctions || [];
-        // Filter for ongoing bids: current date < ending date
-        const ongoingAuctions = auctions.filter((auction: AuctionItem) => {
-          const endingTime = new Date(auction.endingDate).getTime();
-          const currentTime = new Date().getTime();
-          return endingTime > currentTime;
-        });
-        setBids(ongoingAuctions);
+        setBids(auctions);
       } catch (err) {
         console.error("Error fetching auctions:", err);
         // Also set to an empty array on error to be safe
@@ -125,9 +119,9 @@ function App() {
     <div className='flex flex-col justify-between items-center text-sm md:text-lg bg-white h-full'>
         
             <div className="gradient-bg w-full">
-              <div className='flex flex-col items-center text-5xl md:text-9xl md:gap-20 gap-5 text-white my-20 fade-in-up'>
+              <div className='flex flex-col items-center text-3xl md:text-9xl md:gap-20 gap-5 px-5 text-white my-20 fade-in-up'>
                 <div>The <span className='font-bold text-black'>PERFECT</span> Place</div>
-                <span className='text-2xl md:text-6xl text-black'>Where the best deals are made!</span>
+                <span className='text-xl md:text-6xl text-black'>Where the best deals are made!</span>
               </div>
             </div>
           <div className="py-16 text-white">
