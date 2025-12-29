@@ -62,8 +62,8 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => (
     listenersRegistered = true;
 
     socket.on("bid-placed", ( bid,name ) => {
-      console.log("hello",bids);
-      if(user?.id != bid.highestBidder ){
+      console.log("hello",bid);
+      if(user?.id != bid.highestBidder && user?.id != bid.seller){
         toast.message(`${name} has out bid you!Click here to view your bid`);
       }
       updateBid(bid);
