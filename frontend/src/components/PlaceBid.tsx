@@ -173,9 +173,8 @@ const AuctionPage: React.FC = () => {
             <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
                     {/* Header Image Section */}
+                    {auction.image?
                     <div className="relative h-[400px] rounded-3xl overflow-hidden shadow-lg">
-                        {auction.image?
-                        <>
                         <img src={auction.image} className="w-full h-full object-cover" alt={auction.title} />
                         <div className="absolute inset-0 bg-black/40" />
                         <div className="absolute bottom-6 left-6 text-white">
@@ -185,14 +184,13 @@ const AuctionPage: React.FC = () => {
                             <h1 className="text-3xl font-bold">{auction.title}</h1>
                             <p className="opacity-90">{auction.description}</p>
                         </div>
-                        </>
+                    </div>
                         :
                         <div className='bg-gray-500 flex items-center justify-center'>
                                 Seller didnt upload picture so im just gonna put this here
                         </div>
-                        }
-                    </div>
-
+                        
+                    }
                     {/* Info Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-white p-6 rounded-2xl border shadow-sm flex items-center gap-4">
