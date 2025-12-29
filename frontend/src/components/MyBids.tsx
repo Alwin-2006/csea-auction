@@ -22,7 +22,7 @@ export function MyBids() {
   const myAuctions = bids.filter(ele => ele && ele.seller?._id === String(user?.id));
 
   const hasOutbid = bids.some(auction => {
-    if (!auction || !auction.bidHistory || auction.status === 'completed') return false;
+    if (!auction || !auction.bidHistory || auction.status === 'completed'||auction.seller._id === String(user?.id)) return false;
     const myBidsInAuction = auction.bidHistory.filter(b => b.bidder === String(user?.id));
     if (myBidsInAuction.length === 0) return false;
     const myHighestBid = Math.max(...myBidsInAuction.map(b => b.amount));
