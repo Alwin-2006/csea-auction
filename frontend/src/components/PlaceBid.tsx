@@ -54,8 +54,15 @@ const AuctionPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [amount, setAmount] = useState("");
     const [timeRemaining, setTimeRemaining] = useState('Loading...');
+    const [isDisabled, setIsDisabled] = useState(false);
 
-    // These must be STRINGS to prevent the Object Rendering Error
+    const handleClick = () => {
+      setIsDisabled(true);
+      setTimeout(() => {
+        setIsDisabled(false);
+      }, 5000); //to prevent spam submitting
+      console.log("Button clicked!");
+    };
     const [highestBidderName, setHighestBidderName] = useState<string>("No bids yet");
     const [highestBidderPic, setHighestBidderPic] = useState<string>("");
 
@@ -144,6 +151,10 @@ const AuctionPage: React.FC = () => {
         // Optimistic UI update
         setHighestBidderName(user.username);
         setHighestBidderPic(user.profilePicture || "");
+        setIsDisabled(true);
+        setTimeout(() => {
+            setIsDisabled(false);
+        }, 5000);
 
         placeBid({
             mode: auction.mode,
@@ -218,7 +229,7 @@ const AuctionPage: React.FC = () => {
                         />
                         <button 
                             onClick={handleSubmit}
-                            disabled={timeRemaining === "EXPIRED" || auction.seller._id === String(user?.id)}
+                            disabled={timeRemaining === "EXPIRED" || auction.seller._id === String(user?.id)||isDisabled}
                             className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold hover:bg-orange-600 transition-colors disabled:bg-gray-300"
                         >
                             {timeRemaining === "EXPIRED" ? "Auction Ended" : "Confirm Bid"}
