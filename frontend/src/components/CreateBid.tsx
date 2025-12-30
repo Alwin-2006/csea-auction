@@ -69,7 +69,7 @@ function CreateBid() {
         submissionData.append('title', formData.title);
         submissionData.append('description', formData.description);
         submissionData.append('startingBid', formData.startingBid);
-        submissionData.append('currentBid', formData.mode === 'dutch' ? formData.pricedropRate : formData.startingBid);
+        submissionData.append('currentBid', formData.startingBid);
         submissionData.append('mode', formData.mode);
         submissionData.append('seller', String(user.id)); // Corrected to use _id
         submissionData.append('startingDate', formData.startingDate.toISOString());
