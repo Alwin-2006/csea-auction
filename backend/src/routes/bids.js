@@ -40,8 +40,10 @@ router.post('/create-bid', authMiddleware, uploadImage, async (req, res) => {
             imageUrl = uploadResult.secure_url;
         }
 
+        const { pricedropRate, ...rest } = req.body;
         const newBidData = {
-            ...req.body,
+            ...rest,
+            rate: pricedropRate,
             image: imageUrl,
             seller: req.user._id, 
         };

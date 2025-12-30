@@ -40,41 +40,90 @@ export const initializeSocket = (server) => {
 
     socket.on('place-bid', async (bidData) => {
       const { auctionId, amount, bidderId, bidderName, mode } = bidData;
-      
+
       try {
-        const bidder = await User.findById(bidderId);
-        const profilePic = bidder ? bidder.profilePicture : '';
+        const auction = await Bid.findById(auctionId);
+        if (!auction) {
+          console.error(`Auction ${auctionId} not found`);
+          return;
+        }
 
+        if (mode === 'dutch') {
+          if (auction.status === 'completed') {
+            console.log(`Auction ${auctionId} has already ended.`);
+            return;
+          }
 
-        const updatedBid = await Bid.findByIdAndUpdate(
-          auctionId,
-          {
-            $set: {
-              highestBidder: bidderId,
-              currentBid: amount,
+          const bidder = await User.findById(bidderId);
+          const profilePic = bidder ? bidder.profilePicture : '';
+
+          const updatedBid = await Bid.findByIdAndUpdate(
+            auctionId,
+            {
+              $set: {
+                status: 'completed',
+                highestBidder: bidderId,
+                currentBid: amount,
+              },
+              $push: {
+                bidHistory: {
+                  bidder: bidderId,
+                  amount: amount,
+                }
+              },
+              $inc: { totalBids: 1 }
             },
-            $push: {
-              bidHistory: {
-                bidder: bidderId,
-                amount: amount,
-              }
+            { new: true }
+          );
+
+          if (updatedBid) {
+            const updatedBidObject = updatedBid.toObject();
+            updatedBidObject.highestBidderProfilePic = profilePic;
+
+            io.to(`auction-${auctionId}`).emit('auction-finished', {
+              auctionId,
+              timestamp: new Date(),
+              winner: bidderName,
+              winningBid: amount,
+              winnerProfilePic: profilePic
+            });
+            console.log(`Dutch auction ${auctionId} won by ${bidderName} for $${amount}`);
+          } else {
+            console.error(`Failed to find and update auction ${auctionId}`);
+          }
+        } else { // 'standard' mode
+          const bidder = await User.findById(bidderId);
+          const profilePic = bidder ? bidder.profilePicture : '';
+
+          const updatedBid = await Bid.findByIdAndUpdate(
+            auctionId,
+            {
+              $set: {
+                highestBidder: bidderId,
+                currentBid: amount,
+              },
+              $push: {
+                bidHistory: {
+                  bidder: bidderId,
+                  amount: amount,
+                }
+              },
+              $inc: { totalBids: 1 }
             },
-            $inc: { totalBids: 1 }
-          },
-          { new: true }
-        );
+            { new: true }
+          );
 
-        if (updatedBid) {
-          
-          const updatedBidObject = updatedBid.toObject();
-          updatedBidObject.highestBidderProfilePic = profilePic;
+          if (updatedBid) {
+            const updatedBidObject = updatedBid.toObject();
+            updatedBidObject.highestBidderProfilePic = profilePic;
 
-          socket.broadcast.to(`auction-${auctionId}`).emit('bid-placed', updatedBidObject, bidderName);
-          socket.emit('bid-placed', updatedBidObject, bidderName);
-          
-          console.log(`Bid placed on auction ${auctionId}: $${amount}`);
-        } else {
-          console.error(`Failed to find and update auction ${auctionId}`);
+            socket.broadcast.to(`auction-${auctionId}`).emit('bid-placed', updatedBidObject, bidderName);
+            socket.emit('bid-placed', updatedBidObject, bidderName);
+            
+            console.log(`Bid placed on auction ${auctionId}: $${amount}`);
+          } else {
+            console.error(`Failed to find and update auction ${auctionId}`);
+          }
         }
       } catch (error) {
         console.error('Error processing bid:', error);

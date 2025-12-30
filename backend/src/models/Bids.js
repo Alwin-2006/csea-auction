@@ -49,6 +49,9 @@ const bidSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  rate:{
+    type:Number
+  },
   status: {
     type: String,
     enum: ['pending', 'active', 'completed', 'cancelled'],
