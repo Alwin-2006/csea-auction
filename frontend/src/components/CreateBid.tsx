@@ -26,7 +26,7 @@ function CreateBid() {
         description: "",
         startingBid: "",
         mode: "standard",
-        pricedropRate: "",
+        rate: "",
         startingDate: new Date(),
         endingDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
         image: null as File | null,
@@ -78,8 +78,8 @@ function CreateBid() {
         if (formData.image) {
             submissionData.append('image', formData.image);
         }
-        if (formData.mode === 'dutch' && formData.pricedropRate) {
-            submissionData.append('pricedropRate', formData.pricedropRate);
+        if (formData.mode === 'dutch' && formData.rate) {
+            submissionData.append('rate', formData.rate);
         }
 
         try {
@@ -164,8 +164,8 @@ function CreateBid() {
                                 </div>
                                 {formData.mode === 'dutch' && (
                                     <div className="space-y-2">
-                                        <Label htmlFor="pricedropRate">Price Drop Rate (₹ per hour)</Label>
-                                        <Input id="pricedropRate" type="number" value={formData.pricedropRate} onChange={handleInputChange} placeholder="e.g., 50" required={formData.mode === 'dutch'} />
+                                        <Label htmlFor="rate">Price Drop Rate (₹ per hour)</Label>
+                                        <Input id="rate" type="number" value={formData.rate} onChange={handleInputChange} placeholder="e.g., 50" required={formData.mode === 'dutch'} />
                                     </div>
                                 )}
                             </div>

@@ -92,6 +92,7 @@ const AuctionPage: React.FC = () => {
                         const h = Math.floor((diff / (1000 * 60 * 60)));
                         setAmount(String(response.data.auction.startingBid - h*response.data.auction.rate));
                     }
+                    console.log(response.data.auction.rate);
                 } catch (err) {
                     console.error("error",err);
                     setError("Failed to fetch auction details.");
