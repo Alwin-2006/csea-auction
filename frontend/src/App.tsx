@@ -70,7 +70,7 @@ function ItemCard({item}:ItemCardProps){
             
             <div className="flex items-start justify-between">         
                 <Card className={`${item.mode === 'dutch'?"bg-black":"bg-amber-400" } text-white self-start p-4`}>
-                    Standard
+                    {item.mode == "standard"?"Standard":"Dutch"}
                 </Card>
             </div>
             
@@ -117,7 +117,6 @@ function App() {
   return (
     <>
     <div className='flex flex-col justify-between items-center text-sm md:text-lg bg-white h-full'>
-        
             <div className="gradient-bg w-full">
               <div className='flex flex-col items-center text-3xl md:text-9xl md:gap-20 gap-5 px-5 text-white my-20 fade-in-up'>
                 <div>The <span className='font-bold text-black'>PERFECT</span> Place</div>

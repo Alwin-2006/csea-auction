@@ -30,6 +30,8 @@ function CreateBid() {
         startingDate: new Date(),
         endingDate: new Date(new Date().setDate(new Date().getDate() + 7)), // Default to 7 days from now
         image: null as File | null,
+        startingTime: "00:00",
+        endingTime: "00:00",
     });
 
     const [isLoading, setIsLoading] = useState(false);
@@ -72,8 +74,18 @@ function CreateBid() {
         submissionData.append('currentBid', formData.startingBid);
         submissionData.append('mode', formData.mode);
         submissionData.append('seller', String(user.id)); // Corrected to use _id
-        submissionData.append('startingDate', formData.startingDate.toISOString());
-        submissionData.append('endingDate', formData.endingDate.toISOString());
+        const startingDateTime = new Date(formData.startingDate);
+        const [startHours, startMinutes] = formData.startingTime.split(':');
+        startingDateTime.setHours(parseInt(startHours, 10));
+        startingDateTime.setMinutes(parseInt(startMinutes, 10));
+
+        const endingDateTime = new Date(formData.endingDate);
+        const [endHours, endMinutes] = formData.endingTime.split(':');
+        endingDateTime.setHours(parseInt(endHours, 10));
+        endingDateTime.setMinutes(parseInt(endMinutes, 10));
+        
+        submissionData.append('startingDate', startingDateTime.toISOString());
+        submissionData.append('endingDate', endingDateTime.toISOString());
         
         if (formData.image) {
             submissionData.append('image', formData.image);
@@ -177,32 +189,46 @@ function CreateBid() {
                             <Separator />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                 <div className="space-y-2">
-                                    <Label>Starting Date</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.startingDate && "text-muted-foreground")}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {formData.startingDate ? format(formData.startingDate, "PPP") : <span>Pick a date</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={formData.startingDate} onSelect={(date) => date && setFormData(p => ({ ...p, startingDate: date }))} initialFocus />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label>Starting Date & Time</Label>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.startingDate && "text-muted-foreground")}>
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {formData.startingDate ? format(formData.startingDate, "PPP") : <span>Pick a date</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0">
+                                                    <Calendar mode="single" selected={formData.startingDate} onSelect={(date) => date && setFormData(p => ({ ...p, startingDate: date }))} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                        <div className="flex-1">
+                                            <Input id="startingTime" type="time" value={formData.startingTime} onChange={handleInputChange} className="w-full" />
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Ending Date</Label>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.endingDate && "text-muted-foreground")}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {formData.endingDate ? format(formData.endingDate, "PPP") : <span>Pick a date</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={formData.endingDate} onSelect={(date) => date && setFormData(p => ({ ...p, endingDate: date }))} initialFocus />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <Label>Ending Date & Time</Label>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !formData.endingDate && "text-muted-foreground")}>
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {formData.endingDate ? format(formData.endingDate, "PPP") : <span>Pick a date</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0">
+                                                    <Calendar mode="single" selected={formData.endingDate} onSelect={(date) => date && setFormData(p => ({ ...p, endingDate: date }))} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                        <div className="flex-1">
+                                            <Input id="endingTime" type="time" value={formData.endingTime} onChange={handleInputChange} className="w-full" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
