@@ -27,22 +27,20 @@ type User = {
         bidder: string,
         amount: number,
     }[];
-    highestBidderProfilePic?: string; // Added this line
+    highestBidderProfilePic?: string; 
 };
 
 type BidStore = {
   bids: Auction[];
 
-  // actions
   addBid: (bid: Auction) => void;
   removeBid: (id: string) => void;
   clearBids: () => void;
   setBids: (bids: Auction[]) => void;
   updateBid:(bid:Auction) => void
-  /*highestBid: () => Auction | null;*/
 };
 
-export const useBidStore = create<BidStore>((set, get) => ({
+export const useBidStore = create<BidStore>((set) => ({
   bids: [],
 
   addBid: (bid) =>
@@ -66,11 +64,5 @@ export const useBidStore = create<BidStore>((set, get) => ({
         : bid
     ),
   }))
-
-
-  /*highestBid: () => {
-    const bids = get().bids;
-    if (bids.length === 0) return null;
-    return bids.reduce((max, bid) => (bid.amount > max.amount ? bid : max));
-  }*/,
+,
 }));
