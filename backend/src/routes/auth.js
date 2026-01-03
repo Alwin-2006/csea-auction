@@ -140,7 +140,7 @@ router.get('/google/sender-callback', async (req, res) => {
         const senderEmail = payload.email;
 
         await SystemSettings.findOneAndUpdate(
-            { gmailSenderEmail: senderEmail },
+            {},
             { 
                 gmailRefreshToken: tokens.refresh_token,
                 gmailSenderEmail: senderEmail 

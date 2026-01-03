@@ -161,6 +161,8 @@ const AuctionPage: React.FC = () => {
             return () => clearInterval(interval);
         }, [auction, timeRemaining]);
     
+
+        /*SUBMIT FUNCTION */
         const handleSubmit = () => {
             if (!auction || !user) return;
             if (auction.mode === 'standard' && Number(amount) <= auction.currentBid) {

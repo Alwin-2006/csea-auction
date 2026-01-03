@@ -13,7 +13,7 @@ const oAuth2Client = new google.auth.OAuth2(
 
 async function sendEmail(recipientEmail, subject, htmlBody) {
   try {
-    const settings = await SystemSettings.findOne({});
+    const settings = await SystemSettings.findOne({ gmailRefreshToken: { $exists: true, $ne: null } });
     if (!settings || !settings.gmailRefreshToken || !settings.gmailSenderEmail) {
       throw new Error('Gmail sender is not configured. Please authorize the sender account.');
     }
@@ -31,7 +31,7 @@ async function sendEmail(recipientEmail, subject, htmlBody) {
 
 
     const emailParts = [
-      `From: Your Auction App <${settings.gmailSenderEmail}>`,
+      `From: SALE HOUSE <${settings.gmailSenderEmail}>`,
       `To: ${recipientEmail}`,
       'Content-Type: text/html; charset=utf-8',
       'MIME-Version: 1.0',
@@ -95,7 +95,7 @@ async function checkAuctions() {
         <h1>Auction Ended!</h1>
         <p>Your auction <strong>${auction.title}</strong> has closed.</p>
         <p>The winner is ${auction.highestBidder.username}.</p>
-        <p>Final Bid: $${auction.currentBid}</p>
+        <p>Final Bid: Rs${auction.currentBid}</p>
       `;
       const success1 = await sendEmail(
         auction.seller.email,
@@ -107,7 +107,7 @@ async function checkAuctions() {
       const winnerHTML = `
         <h1>Congratulations!</h1>
         <p>Congratulations ${auction.highestBidder.username}, you have won the auction for <strong>${auction.title}</strong>!</p>
-        <p>Final Bid: $${auction.currentBid}</p>
+        <p>Final Bid: Rs${auction.currentBid}</p>
         <p>The seller, ${auction.seller.username}, will be in contact with you shortly.</p>
       `;
       const success2 = await sendEmail(

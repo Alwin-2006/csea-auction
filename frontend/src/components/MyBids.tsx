@@ -17,7 +17,7 @@ export function MyBids() {
   const user = useUserStore((s) => s.user);
 
   // Defensive filtering logic
-  const ongoing = bids.filter(ele => ele && ele.status !== 'completed' && ele.seller?._id !== String(user?.id));
+  const ongoing = bids.filter(ele => ele && ele.status != 'completed' && ele.seller?._id !== String(user?.id));
   const finished = bids.filter(ele => ele && ele.status === 'completed' && ele.seller?._id !== String(user?.id));
   const myAuctions = bids.filter(ele => ele && ele.seller?._id === String(user?.id));
 

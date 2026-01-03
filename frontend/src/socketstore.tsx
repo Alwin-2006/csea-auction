@@ -104,7 +104,6 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => (
   },
   joinMultiple:(auctionIds,username)=>{
       socket.emit("join-multiple",auctionIds,username);
-  
   },
   placeBid: (data) => {
     socket.emit("place-bid", data);
