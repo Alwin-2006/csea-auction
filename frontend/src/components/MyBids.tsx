@@ -77,7 +77,7 @@ export function MyBids() {
                           <div className="flex items-start justify-between mb-4">
                             <div>
                               <h4 className="text-slate-900 mb-2">{bid.title}</h4>
-                              {isWinning ? (
+                              {myHighestBid.amount == bid.currentBid ? (
                                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full">
                                   <CheckCircle className="w-4 h-4" />
                                   <span>Winning</span>
@@ -115,7 +115,6 @@ export function MyBids() {
             <TabsContent value='pastBids'>
               {finished.map((bid) => {
                   const myHighestBid = findMyHighestBid(bid.bidHistory);
-                  const didIWin = bid.highestBidder === user?.id;
 
                   return (
                     <div key={bid._id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
@@ -125,7 +124,7 @@ export function MyBids() {
                             <div className="flex items-start justify-between mb-4">
                               <div>
                                 <h4 className="text-slate-900 mb-2">{bid.title}</h4>
-                                {didIWin ? (
+                                {myHighestBid.amount == bid.currentBid  ? (
                                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full">
                                       <CheckCircle className="w-4 h-4" />
                                       <span>Won</span>
