@@ -1,0 +1,24 @@
+services:
+  backend:
+    build: ./backend
+    container_name: csea-auction-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/CSEA-Auction-Site.env
+    environment:
+      - NODE_ENV=production
+      - FRONTEND_URL=http://localhost:80
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - VITE_API_URL=
+    container_name: csea-auction-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
